@@ -14,6 +14,11 @@ namespace DungeonMaster.InputSystem
         private InputAction _attackAction;
         private InputAction _interactAction;
 
+        // 이벤트 선언
+        public static event Action<Vector2> OnMoveAction;
+        public static event Action OnAttackAction;
+        public static event Action<bool> OnInteractAction;
+
         #region 유니티 생명주기
         private void Awake()
         {
@@ -60,23 +65,27 @@ namespace DungeonMaster.InputSystem
         #region 콜백 메서드
         private void OnMove(InputAction.CallbackContext ctx)
         {
-            Debug.Log($"Move: {ctx.ReadValue<Vector2>()}");
+            // Debug.Log($"Move: {ctx.ReadValue<Vector2>()}");
+            OnMoveAction?.Invoke(ctx.ReadValue<Vector2>());
         }
 
         private void OnAttack(InputAction.CallbackContext ctx)
         {
-            Debug.Log($"Attack: 공격!");
+            // Debug.Log($"Attack: 공격!");
+            OnAttackAction?.Invoke();
         }
 
         private void OnInteract(InputAction.CallbackContext ctx)
         {
             if(ctx.phase == InputActionPhase.Performed)
             {
-                Debug.Log($"Interact: 상호작용 시작");
+                // Debug.Log($"Interact: 상호작용 시작");
+                OnInteractAction?.Invoke(true);
             }
             else if(ctx.phase == InputActionPhase.Canceled)
             {
-                Debug.Log($"Interact: 상호작용 종료");
+                // Debug.Log($"Interact: 상호작용 종료");
+                OnInteractAction?.Invoke(false);
             }
         }
         #endregion
