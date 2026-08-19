@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class Test : MonoBehaviour
 {
     Vector2 _position;
 
