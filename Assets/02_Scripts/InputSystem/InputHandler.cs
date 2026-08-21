@@ -15,9 +15,9 @@ namespace DungeonMaster.InputSystem
         private InputAction _interactAction;
 
         // 이벤트 선언
-        public static event Action<Vector2> OnMoveAction;
-        public static event Action OnAttackAction;
-        public static event Action<bool> OnInteractAction;
+        public event Action<Vector2> OnMoveAction;
+        public event Action OnAttackAction;
+        public event Action<bool> OnInteractAction;
 
         #region 유니티 생명주기
         private void Awake()
@@ -38,7 +38,9 @@ namespace DungeonMaster.InputSystem
             // delegate chain 연결
             _moveAction.performed += OnMove;
             _moveAction.canceled += OnMove;
+
             _attackAction.performed += OnAttack;
+
             _interactAction.performed += OnInteract;
             _interactAction.canceled += OnInteract;
         }
@@ -51,7 +53,9 @@ namespace DungeonMaster.InputSystem
             // delegate chain 해제
             _moveAction.performed -= OnMove;
             _moveAction.canceled -= OnMove;
+
             _attackAction.performed -= OnAttack;
+            
             _interactAction.performed -= OnInteract;
             _interactAction.canceled -= OnInteract;
         }
