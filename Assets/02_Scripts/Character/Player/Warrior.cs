@@ -6,7 +6,23 @@ namespace DungeonMaster.Character.Player
     public class Warrior : Player
     {
         [Header("전사 전용 스탯")]
-        [SerializeField] private float _defense = 10f;
+        [SerializeField] private WarriorSO _warriorSO;
+        private float _defense;
+
+        #region 유니티 생명주기
+        protected override void Awake()
+        {
+            Debug.Log($"Warrior::Awake()");
+
+            // 전사의 기본 스탯 설정
+            _maxHp = _warriorSO.maxHp;
+            _moveSpeed = _warriorSO.moveSpeed;
+            _attackDamage = _warriorSO.attackDamage;
+            _attackCooldown = _warriorSO.attackCooldown;
+            _defense = _warriorSO.defense;
+            base.Awake();
+        }
+        #endregion
 
         protected override void Attack()
         {
@@ -20,19 +36,6 @@ namespace DungeonMaster.Character.Player
             base.TakeDamage(actualDamage);
             Debug.Log($"Warrior가 {actualDamage}의 피해를 입었습니다 (HP: {_currHp} / {_maxHp})");
         }
-
-        #region 유니티 생명주기
-        protected override void Awake()
-        {
-            Debug.Log($"Warrior::Awake()");
-            // 전사의 기본 스탯 설정
-            _maxHp = 150f;
-            _moveSpeed = 4f;
-            _attackDamage = 25f;
-            _attackCooldown = 0.7f;
-            base.Awake();
-        }
-        #endregion
 
     }
 }

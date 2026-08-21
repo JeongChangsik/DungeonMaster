@@ -45,6 +45,9 @@ namespace DungeonMaster.Character.Player
         
         #endregion
 
+        // 마지막 공격 시간 기록
+        private float lastAttackTime = 0f;
+
         #region 유니티 생명주기
         protected virtual void Awake()
         {
@@ -131,8 +134,15 @@ namespace DungeonMaster.Character.Player
         private void OnAttack()
         {
             if(_isDead) return;
-            Attack();
-            _animator.SetTrigger(hashAttack);
+
+            // 공격 쿨다운 체크
+            // Time.time =  시간
+            if(Time.time >= lastAttackTime + _attackCooldown)
+            {
+                lastAttackTime = Time.time;
+                _animator.SetTrigger(hashAttack);
+                Attack();
+            }
         }
 
         private void OnInteract(bool ctx)
