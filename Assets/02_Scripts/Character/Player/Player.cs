@@ -136,7 +136,7 @@ namespace DungeonMaster.Character.Player
             if(_isDead) return;
 
             // 공격 쿨다운 체크
-            // Time.time =  시간
+            // Time.time =  게임이 시작된 시점(또는 씬이 로드된 시점)부터 지금까지 흐른 시간을 초 단위로 알려주는 정적(static) float 값
             if(Time.time >= lastAttackTime + _attackCooldown)
             {
                 lastAttackTime = Time.time;
