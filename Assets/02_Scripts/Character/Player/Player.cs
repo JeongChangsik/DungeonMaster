@@ -1,6 +1,7 @@
 using UnityEngine;
 using DungeonMaster.InputSystem;
 using DungeonMaster.Core;
+// ReSharper disable All
 
 namespace DungeonMaster.Character.Player
 {
@@ -8,7 +9,7 @@ namespace DungeonMaster.Character.Player
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(SpriteRenderer))]
     [RequireComponent(typeof(InputHandler))]
-    public abstract class Player : MonoBehaviour, IDamagble
+    public abstract class Player : MonoBehaviour, IDamagable
     {
         #region 기본 스탯
         [Header("기본 스탯")]

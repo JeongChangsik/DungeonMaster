@@ -17,19 +17,16 @@ public class StateEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("상태 머신 테스트", EditorStyles.boldLabel);
 
-        if (GUILayout.Button($"Idle"))
+        if (!Application.isPlaying)
         {
-            enemy.ChangeState(new IdelState());
+            EditorGUILayout.HelpBox("플레이 모드에서만 상태를 전환할 수 있습니다.", MessageType.Info);
         }
 
-        if (GUILayout.Button($"Chase"))
+        using (new EditorGUI.DisabledScope(!Application.isPlaying))
         {
-            enemy.ChangeState(new ChaseState());
-        }
-
-        if (GUILayout.Button($"Attack"))
-        {
-            enemy.ChangeState(new AttackState());
+        if (GUILayout.Button("Idle"))   enemy.ChangeState<IdleState>();
+        if (GUILayout.Button("Chase"))  enemy.ChangeState<ChaseState>();
+        if (GUILayout.Button("Attack")) enemy.ChangeState<AttackState>();
         }
     }
 }

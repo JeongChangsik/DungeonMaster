@@ -13,7 +13,7 @@ namespace DungeonMaster.Character.Enemy.FSM
 
         public void OnUpdate(Enemy enemy)
         {
-            Debug.Log($"ChaseState::OnUpdate()");
+            // Debug.Log($"ChaseState::OnUpdate()");
             // 플레이어와의 거리가 공격 사정거리 이내이면 공격
             
         }

@@ -1,6 +1,6 @@
 namespace DungeonMaster.Core
 {
-    public interface IDamagble
+    public interface IDamagable
     {
         void TakeDamage(float damage);
     }

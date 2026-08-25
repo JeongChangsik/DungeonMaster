@@ -1,3 +1,4 @@
+// ReSharper disable All
 namespace DungeonMaster.Character.Enemy.FSM
 {
     public class StateMachine
