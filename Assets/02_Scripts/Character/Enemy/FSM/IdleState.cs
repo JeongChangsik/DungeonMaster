@@ -15,7 +15,10 @@ namespace DungeonMaster.Character.Enemy.FSM
         {
             // Debug.Log($"IdleState::OnUpdate()");
             // 플레이어와의 거리를 측정하고 추적 사정거리 이내이면 추적로 변경
-            
+            if (enemy.DetectPlayer())
+            {
+                Debug.Log($"IdleState::OnUpdate() 플레이어 발견!");
+            }
         }
 
         public void OnExit(Enemy enemy)

@@ -4,7 +4,7 @@ using DungeonMaster.Character.Enemy.FSM;
 using UnityEngine;
 
 [CustomEditor(typeof(Enemy), true)]      // 속성 (atrribute)
-public class StateEditor : Editor 
+public class EnemyEditor : Editor 
 {
     public override void OnInspectorGUI()
     {
@@ -24,9 +24,9 @@ public class StateEditor : Editor
 
         using (new EditorGUI.DisabledScope(!Application.isPlaying))
         {
-        if (GUILayout.Button("Idle"))   enemy.ChangeState<IdleState>();
-        if (GUILayout.Button("Chase"))  enemy.ChangeState<ChaseState>();
-        if (GUILayout.Button("Attack")) enemy.ChangeState<AttackState>();
+        if (GUILayout.Button("Idle 상태"))   enemy.ChangeState<IdleState>();
+        if (GUILayout.Button("Chase 상태"))  enemy.ChangeState<ChaseState>();
+        if (GUILayout.Button("Attack 상태")) enemy.ChangeState<AttackState>();
         }
     }
 }
