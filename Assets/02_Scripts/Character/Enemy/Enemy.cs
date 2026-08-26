@@ -18,6 +18,10 @@ namespace DungeonMaster.Character.Enemy
         [Header("주인공 레이어 마스크")]
         [SerializeField] protected LayerMask _playerMask;
         
+        [Header("주인공 검풀 빈도")]
+        [SerializeField] protected float _detectInterval = 0.3f;
+        private float _lastDetectTime = 0f;
+        
         //  상태 머신 변수 선언
         protected StateMachine _stateMachine;
         
@@ -36,14 +40,16 @@ namespace DungeonMaster.Character.Enemy
         protected static readonly int hashIsWalk = Animator.StringToHash("IsWalk");
         protected static readonly int hashHit = Animator.StringToHash("Hit");
         
+        // 애니메이션 설정 메서드
+        public void SetWalk(bool isWalk) => _animator.SetBool(hashIsWalk, isWalk);
+        public void TriggerHit() => _animator.SetTrigger(hashHit);
+
         #region 초기화 메서드
         private void InitComponents()
         {
             _rb = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();            
             _animator = GetComponent<Animator>();
-            
-            
         }
         #endregion
 
@@ -60,7 +66,7 @@ namespace DungeonMaster.Character.Enemy
             InitComponents();
         }
 
-        protected void Start()
+        protected virtual void Start()
         {
             // 상태 머신 초기화
             _stateMachine = new StateMachine(this);
@@ -78,7 +84,7 @@ namespace DungeonMaster.Character.Enemy
         public void OnDrawGizmos()
         {
             Gizmos.color = Color.aquamarine;
-            Gizmos.DrawWireSphere(transform.position, _enemySO.chaseDistance);
+            Gizmos.DrawWireSphere(transform.position, _enemySO.chaseDistance);  // 3d로 그림
 
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, _enemySO.attackDistance);
@@ -95,9 +101,11 @@ namespace DungeonMaster.Character.Enemy
                 _stateMachine?.ChangeState(state);
             }
         }
+        #endregion
         
-        // 반경  
-        public Transform target;
+        #region 추적 관련 메서드
+        // 반경
+        protected Transform target;
 
         public bool DetectPlayer()
         {
@@ -129,9 +137,38 @@ namespace DungeonMaster.Character.Enemy
             target = null;
             return false;
         }
+        
+        // 주인공 검출 시간 확인
+        public bool PlayerDetectable()
+        {
+            if (Time.time >= _lastDetectTime + _detectInterval)
+            {
+                _lastDetectTime = Time.time;
+                return true;
+            }
+            return false;
+        }
 
+        public void MoveToPlayer()
+        {
+            if (target == null) return;
+            
+            // 이동 방향 계산(목표 방향 = (목표 위치 - 현재 위치).normalized)
+            Vector2 direction = (target.position - transform.position).normalized;
+            // Target의 위치에 따라서 스프라이트의 FlipX 속성 변경
+            _spriteRenderer.flipX = direction.x < 0;
+
+            // 목표 방향으로 이동
+            _rb.linearVelocity = direction * _enemySO.moveSpeed;
+            // transform.Translate(transform.position * Time.deltaTime * 1.0f);
+        }
+        
+        // 추적 정지
+        public void StopMoving()
+        {
+            _rb.linearVelocity = Vector2.zero;
+        }
         #endregion
-
 
         #region 테스트 코드
         private void TestFSM()

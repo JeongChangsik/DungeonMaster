@@ -8,6 +8,8 @@ namespace DungeonMaster.InputSystem
     {
         // InputSystem_Action의 인스턴스를 저장하기 위한 변수
         private InputSystem_Actions _inputActions;
+        
+        // InputAction -> 콜백 -> Action
 
         // 액션을 참조할 변수
         private InputAction _moveAction;
@@ -43,6 +45,11 @@ namespace DungeonMaster.InputSystem
 
             _interactAction.performed += OnInteract;
             _interactAction.canceled += OnInteract;
+            
+            // InputAction
+            // started : 누르기 시작했을 때
+            // performed : 누른 상태
+            // canceled : 손을 땠을 때
         }
 
         private void OnDisable()

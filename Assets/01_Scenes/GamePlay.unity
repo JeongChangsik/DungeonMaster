@@ -65415,7 +65415,9 @@ MonoBehaviour:
   _playerMask:
     serializedVersion: 2
     m_Bits: 256
+  _detectInterval: 0.3
   target: {fileID: 0}
+  respawned: 0
 --- !u!50 &980715168
 Rigidbody2D:
   serializedVersion: 5
@@ -68862,7 +68864,7 @@ Tilemap:
       - {fileID: 184717373, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1010293531, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1547545271, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 4.457725
+      m_AnimationSpeed: 3.531159
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -37, y: 4, z: 0}
@@ -68872,7 +68874,7 @@ Tilemap:
       - {fileID: 184717373, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1010293531, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1547545271, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 3.051383
+      m_AnimationSpeed: 3.2732906
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -32, y: 4, z: 0}
@@ -68882,7 +68884,7 @@ Tilemap:
       - {fileID: 184717373, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1010293531, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1547545271, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 3.584042
+      m_AnimationSpeed: 4.202858
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -11, y: 20, z: 0}
@@ -68892,7 +68894,7 @@ Tilemap:
       - {fileID: 4110507524353339581, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -6074762140567998671, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -2315569526197371611, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 3.3486066
+      m_AnimationSpeed: 3.3212175
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -5, y: 20, z: 0}
@@ -68902,7 +68904,7 @@ Tilemap:
       - {fileID: 4110507524353339581, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -6074762140567998671, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -2315569526197371611, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 4.1784463
+      m_AnimationSpeed: 3.58142
       m_AnimationTimeOffset: 0
       m_Flags: 0
   m_TileAssetArray:
