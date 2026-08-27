@@ -85,18 +85,38 @@ namespace DungeonMaster.Character.Enemy
             Vector2 dashDir = target.transform.position - transform.position;
             // 공격할 좌표를 계산 (목표 좌표 = 현재 위치 + 목표 방향 벡터 * 거리)
             Vector2 dashPos = currPosition + dashDir * _dashDistance;
+
+            _spriteRenderer.flipX = dashDir.x < 0;
+
+            // 실제로 이동한 시간(누적 시간)
+            float dashTime = 0f;
+            // 이동 시간 계산
+            float dashDuration = _dashDistance / _dashSpeed;
             
             // while 루프로 대쉬 처리(앞으로 점진적으로 이동)
-            while (_isAttacking)
+            while (dashTime < dashDuration)
             {
                 // 대쉬
-                // 잠시 대기
-                // 원위치로 복귀
+                transform.position = Vector2.MoveTowards(transform.position, dashPos, Time.deltaTime * _dashSpeed);
+                dashTime += Time.deltaTime;
+                yield return null;
+            }
+            // 잠시 대기
+            yield return new WaitForSeconds(_delayTimeAfterDash);
+            
+            // while : 원위치로 복귀
+            float returnTime = 0f;
+            float returnDistance = Vector2.Distance(transform.position, _originPosition);
+            float returnDuration = returnDistance / _dashSpeed;
+            
+            while (returnTime < returnDuration)
+            {
+                transform.position = Vector2.MoveTowards(transform.position, _originPosition, Time.deltaTime * _returnSpeed);
+                returnTime += Time.deltaTime;
                 yield return null;
             }
             _isAttacking = false;
         }
-
         #endregion
     }
 }

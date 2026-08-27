@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using DungeonMaster.Character.Enemy.FSM;
+using DungeonMaster.Character.Player;
+using DungeonMaster.Core;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 
 namespace DungeonMaster.Character.Enemy
 {
@@ -14,6 +17,8 @@ namespace DungeonMaster.Character.Enemy
     {
         [Header("기본 스탯")]
         [SerializeField] protected EnemySO _enemySO;
+
+        public EnemySO EnemySO => _enemySO;
         
         [Header("주인공 레이어 마스크")]
         [SerializeField] protected LayerMask _playerMask;
@@ -105,7 +110,7 @@ namespace DungeonMaster.Character.Enemy
         
         #region 추적 관련 메서드
         // 반경
-        protected Transform target;
+        public Transform target;
 
         public bool DetectPlayer()
         {
@@ -131,6 +136,14 @@ namespace DungeonMaster.Character.Enemy
                     .OrderBy(c => (c.transform.position - transform.position).sqrMagnitude) // 정렬값  (c는 값에서 Linq 관례로 "colliders"의 첫 글자인 "c")
                     .First() // OrderBy한 첫 번쨰 값을 가져옴
                     .transform;
+                
+                // 조건절을 이용하여 3마리를 랜덤으로 추출
+                // target = colliders
+                //     .Where(c => (c.transform.position - transform.position).sqrMagnitude >= _enemySO.attackDistance)
+                //     .OrderBy(c => Random.value)
+                //     .Take(3)
+                //     .FirstOrDefault()?.transform;
+                
                 return target != null;
             }
             
@@ -167,7 +180,58 @@ namespace DungeonMaster.Character.Enemy
         public void StopMoving()
         {
             _rb.linearVelocity = Vector2.zero;
+            _animator.SetBool(hashIsWalk, false);
         }
+        
+        // 공격 쿨타임이 지났는지 여부를 확인하는 메서드
+        public bool CanAttack(float lastAttackTime)
+        {
+            if (Time.time > lastAttackTime + _enemySO.attackCooldown)
+            {
+                return true;
+            }
+            return false;
+        }
+        
+        // 공격 사정거리 이내에 플레이어 존재 여부 확인
+        public bool PlayerAttackable()
+        {
+            float attackRange = (target.position - transform.position).sqrMagnitude;
+            return (attackRange <= _enemySO.attackDistance * _enemySO.attackDistance);  // Mathf.Pow() => 사용 X, 속도 느림
+        } 
+        #endregion
+        
+        #region 충돌 감지 메서드
+
+        // Collider가 충돌할 때 호출
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (other.CompareTag("PLAYER")) // or other.tag == "PLAYER"
+            {
+                var player = other.gameObject.GetComponent<IDamagable>();
+                player?.TakeDamage(_enemySO.attackDamage);
+            }
+        }
+        
+        // 겹쳐진 상태일 때 계속 호출(웬만하면 사용 X -> 속도 문제)
+        // private void OnTriggerStay2D(Collider2D other) { ... }
+        
+        // 충돌이 떨어질 때 호출
+        // private void OnTriggerExit2D(Collider2D other) { ... }
+        
+        // 위 콜백말고도 더 많은 콜백이 있는데, 매번 보고 작성하기가 어려움
+        // 그래서 하기 조건을 만족하는 것들에서 위 콜백들이 호출됨
+        // Collider 충돌 조건
+        // 1. 양쪽 다 Collider2D 컴포넌트가 존재해야 함
+        // 2. 이동하는 객체에는 Rigidbody2D
+        
+        /* IsTrigger 체크
+         * OnTriggerEnter / OnTriggerStay / OnTriggerExit
+         *
+         * IsTrigger 언체크
+         * 
+         */
+
         #endregion
 
         #region 테스트 코드

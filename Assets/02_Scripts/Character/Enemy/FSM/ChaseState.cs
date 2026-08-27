@@ -19,7 +19,16 @@ namespace DungeonMaster.Character.Enemy.FSM
                 // 거리가 멀어지면 다시 IdleState로 전환
                 if (enemy.DetectPlayer())
                 {
-                    enemy.MoveToPlayer();
+                    // 공격 범위 내 플레이어 존재 여부 판단
+                    if (enemy.PlayerAttackable())
+                    {
+                        // if (enemy is Swampy swampy && !swampy.CanAttack(swampy.LastAttackTime)) return;
+                        enemy.ChangeState<AttackState>();
+                    }
+                    else
+                    {
+                        enemy.MoveToPlayer();
+                    }
                 }
                 else
                 {
