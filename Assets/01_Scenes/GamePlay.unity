@@ -68618,7 +68618,7 @@ Tilemap:
       - {fileID: 184717373, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1010293531, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1547545271, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 3.2135835
+      m_AnimationSpeed: 3.418913
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -37, y: 4, z: 0}
@@ -68628,7 +68628,7 @@ Tilemap:
       - {fileID: 184717373, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1010293531, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1547545271, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 3.7341323
+      m_AnimationSpeed: 3.1387897
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -32, y: 4, z: 0}
@@ -68638,7 +68638,7 @@ Tilemap:
       - {fileID: 184717373, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1010293531, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: 1547545271, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 4.7648315
+      m_AnimationSpeed: 3.5854154
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -11, y: 20, z: 0}
@@ -68648,7 +68648,7 @@ Tilemap:
       - {fileID: 4110507524353339581, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -6074762140567998671, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -2315569526197371611, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 4.9224987
+      m_AnimationSpeed: 4.882741
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -5, y: 20, z: 0}
@@ -68658,7 +68658,7 @@ Tilemap:
       - {fileID: 4110507524353339581, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -6074762140567998671, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
       - {fileID: -2315569526197371611, guid: 46164f28a25c4d947b049a47afd642c5, type: 3}
-      m_AnimationSpeed: 3.8614988
+      m_AnimationSpeed: 3.093772
       m_AnimationTimeOffset: 0
       m_Flags: 0
   m_TileAssetArray:
@@ -68868,6 +68868,10 @@ PrefabInstance:
     - target: {fileID: 2127303204923497961, guid: bb7676c6eb63343448677af0b62e9ed8, type: 3}
       propertyPath: m_Name
       value: Swampy_2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4302935922059990606, guid: bb7676c6eb63343448677af0b62e9ed8, type: 3}
+      propertyPath: _knockbackDistance
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

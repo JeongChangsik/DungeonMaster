@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f059f20a8d4942c99034712a8dabbd91, type: 3}
+  m_Script: {fileID: 11500000, guid: 19fe8c41c10549ed8bd6de9a78a9783d, type: 3}
   m_Name: SwampySO
-  m_EditorClassIdentifier: Assembly-CSharp::EnemySO
+  m_EditorClassIdentifier: Assembly-CSharp::SwampySO
   maxHp: 100
   moveSpeed: 1
   chaseDistance: 5

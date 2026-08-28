@@ -8,7 +8,7 @@ namespace DungeonMaster.Character.Player
     {
         [Header("적 검출 설정")]
         [SerializeField] private Vector2 _size = new Vector2(1f, 2f);
-        [SerializeField] private float _offset = 0.5f;
+        [SerializeField] private float _offset = 1f;
         [SerializeField] private LayerMask _enemyLayer;
         private Vector2 _direction;
         private Vector2 _center;
@@ -30,15 +30,18 @@ namespace DungeonMaster.Character.Player
             _defense = _warriorSO.defense;
             base.Awake();
         }
-        
-        public void OnDrawGizmos()
+        private void OnDrawGizmos()
         {
+            if(_spriteRenderer == null) _spriteRenderer = GetComponent<SpriteRenderer>();
+            
             _direction = _spriteRenderer.flipX ? Vector2.left : Vector2.right;
             _center = (Vector2)transform.position + (_direction * _offset);
             
-            Gizmos.color = Color.chartreuse;
+            // Gizmos.color = Color.chartreuse;
+            Gizmos.color = new Color(1f, 0f, 0f, 0.8f); // a: alpha 투명도 (1f 이면 불투명)
             // Gizmos.DrawWireSphere(transform.position, );  // 3d로 그림
-            Gizmos.DrawWireCube(_center, _size);
+            // Gizmos.DrawWireCube(_center, _size);    
+            Gizmos.DrawCube(_center, _size);    
         }
         #endregion
 
@@ -66,7 +69,6 @@ namespace DungeonMaster.Character.Player
             Vector2 center = (Vector2)transform.position + (direction * _offset);
 
             // 추출 OverlapBoxAll
-            // 
             Collider2D[] colliders = Physics2D.OverlapBoxAll(center, _size, 0, _enemyLayer);
             foreach (var collider in colliders)
             {

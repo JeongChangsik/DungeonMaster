@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4302935922059990606}
   - component: {fileID: 577140521995416677}
   - component: {fileID: 3781395930272498295}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Swampy_Prefab
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -140,6 +140,8 @@ MonoBehaviour:
   _delayTimeAfterDash: 0.2
   _returnSpeed: 8
   _dashDistance: 1
+  _knockbackSpeed: 15
+  _knockbackDistance: 1.5
   respawned: 0
 --- !u!50 &577140521995416677
 Rigidbody2D:

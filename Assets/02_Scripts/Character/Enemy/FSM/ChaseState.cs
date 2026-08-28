@@ -13,6 +13,9 @@ namespace DungeonMaster.Character.Enemy.FSM
 
         public void OnUpdate(Enemy enemy)
         {
+            // 넉백 중에는 거리 판정, 공격 시작 모두 스킵
+            if (enemy.IsKnockbacking) return;
+            
             // Debug.Log($"ChaseState::OnUpdate()");
             if (enemy.PlayerDetectable())
             {

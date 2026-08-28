@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,10 +14,15 @@ namespace DungeonMaster.Character.Enemy
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(SpriteRenderer))]
-    public abstract class Enemy : MonoBehaviour
+    public abstract class Enemy : MonoBehaviour, IDamagable
     {
         [Header("기본 스탯")]
         [SerializeField] protected EnemySO _enemySO;
+
+        protected float _currHp;
+        public bool IsDead => _currHp <= 0f;
+        // 넉백 진행 여부
+        public bool IsKnockbacking { get; protected set; } = false;
 
         public EnemySO EnemySO => _enemySO;
         
@@ -69,6 +75,9 @@ namespace DungeonMaster.Character.Enemy
 
             InitState();
             InitComponents();
+            
+            // 초기 HP 설정
+            _currHp = _enemySO.maxHp;
         }
 
         protected virtual void Start()
@@ -251,5 +260,36 @@ namespace DungeonMaster.Character.Enemy
             }
         }
         #endregion
+
+        #region 인터페이스 구현
+        public virtual void TakeDamage(float damage)
+        {
+            if (IsDead) return;
+            _currHp -= damage;
+            if (IsDead)
+            {
+                Die();
+            }
+            else
+            {
+                _animator.SetTrigger(hashHit);
+            }
+        }
+        #endregion
+
+        protected virtual void Die()
+        {
+            _currHp = 0;
+            Debug.Log("적 캐릭터 사망");
+
+            StartCoroutine(DestroyEnemy());
+        }
+
+        // 코루틴 함수 추가
+        private IEnumerator DestroyEnemy()
+        {
+            yield return new WaitForSeconds(0.5f);
+            Destroy(gameObject);
+        }
     }
 }
