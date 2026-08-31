@@ -238,8 +238,19 @@ namespace DungeonMaster.Character.Enemy
          * OnTriggerEnter / OnTriggerStay / OnTriggerExit
          *
          * IsTrigger 언체크
-         * 
+         * OnCollisionEnter / OnCollisionStay / OnCollisionExit
          */
+        
+        // 충돌은 크게 두 가지
+        // Collision : 충돌 시 물리량이 적용(겹쳐지지 못함)
+        // - OnCollisionEnter(Collider collision) : 충돌이 시작될 때 호출
+        // - OnCollisionStay(Collider collision) : 충돌이 유지될 때 호출
+        // - OnCollisionExit(Collider collision) : 충돌이 끝날 때 호출
+        // Trigger : 충돌 시 물리량이 적용되지 않음(겸쳐짐)
+        // - OnTriggerEnter(Collider other) : 겹쳐지기 시작할 때 호출
+        // - OnTriggerStay(Collider other) : 겹쳐진 상태일 때 호출
+        // - OnTriggerExit(Collider other) : 겹쳤다가 떨어질 때 호출
+        // Trigger를 사용하려면 Collider에 "Is Trigger" 옵션을 켜야함 -> 아니면 Collision으로 인식
 
         #endregion
 
