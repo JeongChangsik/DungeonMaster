@@ -12,6 +12,14 @@ namespace DungeonMaster.Character.Player
         [SerializeField] private LayerMask _enemyLayer;
         private Vector2 _direction;
         private Vector2 _center;
+
+        [SerializeField] private AudioClip _attackSFX;
+        private AudioSource _audioSource;
+        
+        // AudioSource
+        // AudioSource.Play 오디오 클립 실행 중에 다시 실행되면 끊김
+        // AudioSource.PlayOneShot 중첩되어도 실행될 수 있음
+        // 
         
         [Header("전사 전용 스탯")]
         [SerializeField] private WarriorSO _warriorSO;
@@ -29,6 +37,8 @@ namespace DungeonMaster.Character.Player
             _attackCooldown = _warriorSO.attackCooldown;
             _defense = _warriorSO.defense;
             base.Awake();
+            
+            _audioSource = GetComponent<AudioSource>();
         }
         private void OnDrawGizmos()
         {
@@ -49,6 +59,8 @@ namespace DungeonMaster.Character.Player
         protected override void Attack()
         {
             Debug.Log("공격 실행");
+            // _audioSource.PlayOneShot(_attackSFX, 0.8f);
+            AudioManager.Instance.PlayerSFX(AudioManager.Instance.AudioDataSO.playerAttackSFX);
         }
 
         public override void TakeDamage(float damage)

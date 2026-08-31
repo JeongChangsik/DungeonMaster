@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 340848100d7c7814aaeddce813cd4403, type: 3}
+  m_Name: AudioDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::AudioDataSO
+  volume: 0.8
+  mainBGM: {fileID: 8300000, guid: 8ffa03fc4aacd3348ad31d3cc8eb0115, type: 3}
+  battleBGM: {fileID: 8300000, guid: c91bc254612e6b84daf1a80b9463149b, type: 3}
+  playerAttackSFX: {fileID: 8300000, guid: 85cae26d493a1a743b61cd4bafe5c76f, type: 3}
+  enemyAttackSFX: {fileID: 8300000, guid: 68e46709c26766c4290b833d6c35cf13, type: 3}
+  itemPickupSFX: {fileID: 8300000, guid: 2bf452fadd872c7468200a90c7c953f1, type: 3}

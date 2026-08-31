@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "WarriorSO", menuName = "Scriptable Objects/WarriorSO")]
+[CreateAssetMenu(fileName = "WarriorSO", menuName = "DungeonMaster/WarriorSO")]
 public class WarriorSO : ScriptableObject
 {
     [Header("전사 기본 스탯")]

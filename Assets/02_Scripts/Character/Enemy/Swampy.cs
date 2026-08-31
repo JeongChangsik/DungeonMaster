@@ -94,6 +94,9 @@ namespace DungeonMaster.Character.Enemy
             float dashTime = 0f;
             // 이동 시간 계산
             float dashDuration = _dashDistance / _dashSpeed;
+
+            // 공격 사운드 재생
+            AudioManager.Instance.EnemySFX(AudioManager.Instance.AudioDataSO.enemyAttackSFX);
             
             // while 루프로 대쉬 처리(앞으로 점진적으로 이동)
             while (dashTime < dashDuration)
