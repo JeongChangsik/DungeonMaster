@@ -1,6 +1,7 @@
 using UnityEngine;
 using DungeonMaster.InputSystem;
 using DungeonMaster.Core;
+using Unity.Cinemachine;
 // ReSharper disable All
 
 namespace DungeonMaster.Character.Player

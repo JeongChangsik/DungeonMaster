@@ -168,9 +168,9 @@ GameObject:
   - component: {fileID: 3884664727457984505}
   - component: {fileID: 838930515629960722}
   - component: {fileID: 1297086156592413154}
+  - component: {fileID: 4891178301905420121}
   - component: {fileID: 2206411164869851644}
   - component: {fileID: 4427398097100808761}
-  - component: {fileID: 4891178301905420121}
   m_Layer: 8
   m_Name: Warrior_Prefab
   m_TagString: PLAYER
@@ -303,41 +303,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &2206411164869851644
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8601544889747786836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a423768e5db7fab4f8f618d64a7dab0f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.InputSystem.InputHandler
---- !u!114 &4427398097100808761
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8601544889747786836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 919efd69846691a4e85063c59dfec973, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Character.Player.Warrior
-  _maxHp: 100
-  _currHp: 100
-  _moveSpeed: 5
-  _attackDamage: 20
-  _attackCooldown: 0.5
-  _size: {x: 1.5, y: 2.5}
-  _offset: 1
-  _enemyLayer:
-    serializedVersion: 2
-    m_Bits: 512
-  _warriorSO: {fileID: 11400000, guid: 2512c2cdcf931224c9b7d7a538745a6c, type: 2}
 --- !u!70 &4891178301905420121
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -375,3 +340,39 @@ CapsuleCollider2D:
   m_Offset: {x: -0.00009346008, y: -0.1589247}
   m_Size: {x: 0.63090134, y: 0.9946506}
   m_Direction: 0
+--- !u!114 &2206411164869851644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8601544889747786836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a423768e5db7fab4f8f618d64a7dab0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.InputSystem.InputHandler
+--- !u!114 &4427398097100808761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8601544889747786836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 919efd69846691a4e85063c59dfec973, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Character.Player.Warrior
+  _maxHp: 100
+  _currHp: 100
+  _moveSpeed: 5
+  _attackDamage: 20
+  _attackCooldown: 0.5
+  _size: {x: 1.5, y: 2.5}
+  _offset: 1
+  _enemyLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  _attackSFX: {fileID: 0}
+  _warriorSO: {fileID: 11400000, guid: 2512c2cdcf931224c9b7d7a538745a6c, type: 2}

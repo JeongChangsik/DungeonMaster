@@ -13,8 +13,9 @@ namespace DungeonMaster.Character.Player
         private Vector2 _direction;
         private Vector2 _center;
 
-        [SerializeField] private AudioClip _attackSFX;
-        private AudioSource _audioSource;
+        // [Header("오디오 설정")]
+        // [SerializeField] private AudioClip _attackSFX;
+        // private AudioSource _audioSource;
         
         // AudioSource
         // AudioSource.Play 오디오 클립 실행 중에 다시 실행되면 끊김
@@ -38,7 +39,7 @@ namespace DungeonMaster.Character.Player
             _defense = _warriorSO.defense;
             base.Awake();
             
-            _audioSource = GetComponent<AudioSource>();
+            // _audioSource = GetComponent<AudioSource>();
         }
         private void OnDrawGizmos()
         {
@@ -82,13 +83,23 @@ namespace DungeonMaster.Character.Player
 
             // 추출 OverlapBoxAll
             Collider2D[] colliders = Physics2D.OverlapBoxAll(center, _size, 0, _enemyLayer);
+
+            if(colliders.Length > 0) CameraShake.Instance.Shake();
+
             foreach (var collider in colliders)
             {
                 collider.GetComponent<IDamagable>()?.TakeDamage(_warriorSO.attackDamage);
             }
         }
-        
         #endregion
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if(other.CompareTag("Enemy"))
+            {
+                CameraShake.Instance.Shake();
+            }
+        }
 
     }
 }
