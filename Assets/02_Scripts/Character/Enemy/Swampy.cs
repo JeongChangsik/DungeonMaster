@@ -115,7 +115,7 @@ namespace DungeonMaster.Character.Enemy
             // while : 원위치로 복귀
             float returnTime = 0f;
             float returnDistance = Vector2.Distance(transform.position, _originPosition);
-            float returnDuration = returnDistance / _dashSpeed;
+            float returnDuration = returnDistance / _returnSpeed;
             
             while (returnTime < returnDuration)
             {
