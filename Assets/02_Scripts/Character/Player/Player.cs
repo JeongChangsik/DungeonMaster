@@ -2,6 +2,7 @@ using UnityEngine;
 using DungeonMaster.InputSystem;
 using DungeonMaster.Core;
 using Unity.Cinemachine;
+using UnityEngine.UI;
 // ReSharper disable All
 
 namespace DungeonMaster.Character.Player
@@ -36,6 +37,9 @@ namespace DungeonMaster.Character.Player
         protected Animator _animator;
         protected SpriteRenderer _spriteRenderer;
         protected InputHandler _inputHandler;
+        // HP bar 연결 방법 두 가지(Unity에서 연결, 코드로 연결)
+        [SerializeField] protected Image _hpBar;
+        private Image _hpBar2;
 
         // Facing 처리를 위한 Weapon Arm
         protected Transform _weaponArm;
@@ -62,6 +66,17 @@ namespace DungeonMaster.Character.Player
             _animator = GetComponent<Animator>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _inputHandler = GetComponent<InputHandler>();
+
+            // GetComponentsInChildren 함수는 깊이 우선 탐색(DFS)으로 처음 하위 오브젝트에서 더 하위 오브젝트로 내려가면서 배열에 할당함.
+            /* Player 오브젝트와 하위 오브젝트에 모두 Image 컴포넌트가 있다고 하면, Player, Arm, Pivot, Sword, Head 순으로 배열에 할당됨
+             * Player
+                ├─ Arm
+                │   └─ Pivot
+                │       └─ Sword 
+                └─ Head
+            */
+            // 하지만 여기서는 GameObject.Find로 "Canvas" 오브젝트를 찾았으니 "Canvas" 오브젝트부터 하위로 Image 컴포넌트 탐색함
+            _hpBar2 = GameObject.Find("Canvas").GetComponentsInChildren<Image>()[2];
 
             // Weapon Arm 설정
             _weaponArm = transform.Find("Arm");
@@ -165,6 +180,11 @@ namespace DungeonMaster.Character.Player
             Debug.Log($"피격 당함! (dmg: {damage})");
 
             _currHp -= damage;
+
+            // HP바 갱신
+            _hpBar.fillAmount = _currHp / _maxHp;
+            // _hpBar2.fillAmount = _currHp / _maxHp;
+
             _animator.SetTrigger(hashHit);
 
             if(_currHp <= 0f)

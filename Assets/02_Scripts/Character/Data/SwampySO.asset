@@ -16,5 +16,5 @@ MonoBehaviour:
   moveSpeed: 1
   chaseDistance: 5
   attackDistance: 2
-  attackDamage: 10
+  attackDamage: 20
   attackCooldown: 1
