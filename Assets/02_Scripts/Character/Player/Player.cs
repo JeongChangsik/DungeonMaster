@@ -108,7 +108,7 @@ namespace DungeonMaster.Character.Player
 
         #region 공통 메서드
         // Facing 처리
-        protected void FlipDirection(bool facingRight)
+        protected virtual void FlipDirection(bool facingRight)
         {
             if (facingRight)
             {

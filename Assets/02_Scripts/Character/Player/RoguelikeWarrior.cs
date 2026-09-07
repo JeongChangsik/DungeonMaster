@@ -46,9 +46,8 @@ namespace DungeonMaster.Character.Player
         #region 공격 및 피격 처리
         protected override void Attack()
         {
+            // Don't use
             Debug.Log("공격 실행");
-            // _audioSource.PlayOneShot(_attackSFX, 0.8f);
-            AudioManager.Instance.PlayerSFX(AudioManager.Instance.AudioDataSO.playerAttackSFX);
         }
 
         public override void TakeDamage(float damage)

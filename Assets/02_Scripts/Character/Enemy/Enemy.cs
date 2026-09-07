@@ -31,7 +31,7 @@ namespace DungeonMaster.Character.Enemy
         
         [Header("주인공 검풀 빈도")]
         [SerializeField] protected float _detectInterval = 0.3f;
-        private float _lastDetectTime = 0f;
+        protected float _lastDetectTime = 0f;
         
         //  상태 머신 변수 선언
         protected StateMachine _stateMachine;
@@ -87,7 +87,7 @@ namespace DungeonMaster.Character.Enemy
             ChangeState<IdleState>();
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             // Debug.Log($"Enemy::Update()");
             // 상태 머신 업데이트
