@@ -39,7 +39,7 @@ namespace DungeonMaster.Character.Enemy
             
         }
 
-        protected virtual void Start()
+        protected override void Start()
         {
             base.Start();
             

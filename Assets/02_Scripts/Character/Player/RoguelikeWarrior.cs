@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DungeonMaster.Character.Player
 {
-    public class Warrior : Player
+    public class RoguelikeWarrior : RoguelikePlayer
     {
         [Header("적 검출 설정")]
         [SerializeField] private Vector2 _size = new Vector2(1f, 2f);

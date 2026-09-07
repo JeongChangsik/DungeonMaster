@@ -39,7 +39,7 @@ namespace DungeonMaster.Character.Player
         protected InputHandler _inputHandler;
         // HP bar 연결 방법 두 가지(Unity에서 연결, 코드로 연결)
         [SerializeField] protected Image _hpBar;
-        private Image _hpBar2;
+        protected Image _hpBar2;
 
         // Facing 처리를 위한 Weapon Arm
         protected Transform _weaponArm;
@@ -52,7 +52,7 @@ namespace DungeonMaster.Character.Player
         #endregion
 
         // 마지막 공격 시간 기록
-        private float lastAttackTime = 0f;
+        protected float lastAttackTime = 0f;
 
         #region 유니티 생명주기
         protected virtual void Awake()
@@ -86,14 +86,14 @@ namespace DungeonMaster.Character.Player
             // Transform는 GetComponent처럼 가져오는 방식이 아닌 직접 접근할 수 있는 shorthand를 유니티에서 지원함
         }
 
-        protected void OnEnable()
+        protected virtual void OnEnable()
         {
             _inputHandler.OnMoveAction += OnMove;
             _inputHandler.OnAttackAction += OnAttack;
             _inputHandler.OnInteractAction += OnInteract;
         }
 
-        protected void OnDisable()
+        protected virtual void OnDisable()
         {
             _inputHandler.OnMoveAction -= OnMove;
             _inputHandler.OnAttackAction -= OnAttack;
@@ -108,7 +108,7 @@ namespace DungeonMaster.Character.Player
 
         #region 공통 메서드
         // Facing 처리
-        private void FlipDirection(bool facingRight)
+        protected void FlipDirection(bool facingRight)
         {
             if (facingRight)
             {
@@ -127,7 +127,7 @@ namespace DungeonMaster.Character.Player
         #endregion
 
         #region 입력 처리 메서드
-        private void OnMove(Vector2 ctx)
+        protected void OnMove(Vector2 ctx)
         {
             if(_isDead) return;
             Debug.Log($"이동: {ctx}, 벡터 크기: {ctx.normalized}");
@@ -148,7 +148,7 @@ namespace DungeonMaster.Character.Player
 
         }
 
-        private void OnAttack()
+        protected void OnAttack()
         {
             if(_isDead) return;
 
@@ -162,7 +162,7 @@ namespace DungeonMaster.Character.Player
             }
         }
 
-        private void OnInteract(bool ctx)
+        protected void OnInteract(bool ctx)
         {
             if(_isDead) return;
             Debug.Log($"상호작용: {ctx}");
