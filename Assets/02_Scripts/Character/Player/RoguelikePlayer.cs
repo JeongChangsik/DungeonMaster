@@ -5,6 +5,7 @@ using Unity.Cinemachine;
 using UnityEngine.UI;
 using System;
 using MoreMountains.Tools;
+using DungeonMaster.Weapon;
 
 // ReSharper disable All
 
@@ -22,6 +23,9 @@ namespace DungeonMaster.Character.Player
         private int _currExp = 0;
         private int _level = 1;
 
+        // 공전 무기. 업그레이드가 이걸 통해 강화한다
+        public WeaponOrbit Orbit { get; private set; }
+
         #region 유니티 생명주기
         protected override void Awake()
         {
@@ -34,6 +38,9 @@ namespace DungeonMaster.Character.Player
             _animator = GetComponent<Animator>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _inputHandler = GetComponent<InputHandler>();
+
+            // 계층이 Player > WeaponRoot > OrbitPivot 이라 손자까지 훑어야 함
+            Orbit = GetComponentInChildren<WeaponOrbit>();
 
             // _expBar.fillAmount = 0f;
         }

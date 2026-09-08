@@ -10,8 +10,9 @@ namespace DungeonMaster.Weapon
     {
         [Header("궤도 설정")]
         [SerializeField] private GameObject _weaponPrefab;
-        [Min(1)]
-        [SerializeField] private int _count = 1;                // 무기 개수
+        // 0으로 시작한다. 시작 무기는 LevelUpUI의 Starting Upgrades가 넣어준다
+        [Min(0)]
+        [SerializeField] private int _count = 0;                // 무기 개수
         [Min(0f)]
         [SerializeField] private float _radius = 1.5f;          // 궤도 반경
         [SerializeField] private float _angularSpeed = -180f;    // 초당 회전 각도(양수: 반시계)
@@ -86,6 +87,31 @@ namespace DungeonMaster.Weapon
                 child.SetActive(false);
                 Destroy(child);
             }
+        }
+        #endregion
+
+        #region 강화
+        public void AddCount(int amount)
+        {
+            _count += amount;
+            Rebuild();          // 개수가 바뀌었으니 재배치
+        }
+
+        public void AddDamage(float amount)
+        {
+            _damage += amount;
+            Rebuild();          // 이미 생성된 무기들에 새 데미지를 내려줘야 함
+        }
+
+        public void AddRadius(float amount)
+        {
+            _radius += amount;
+            Rebuild();
+        }
+
+        public void MultiplySpeed(float multiplier)
+        {
+            _angularSpeed *= multiplier;   // 회전만 빨라지면 되므로 Rebuild 불필요
         }
         #endregion
     }
