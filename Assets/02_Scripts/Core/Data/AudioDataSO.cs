@@ -25,4 +25,5 @@ public class AudioDataSO : ScriptableObject
     public AudioClip cardSelectSFX;     // 카드 선택
     public AudioClip weaponThrowSFX;    // 단검 투척
     public AudioClip playerHurtSFX;     // 플레이어 피격
+    public AudioClip enemyChargeSFX;    // 돌진형 적이 기를 모을 때 (피할 타이밍을 소리로 알림)
 }

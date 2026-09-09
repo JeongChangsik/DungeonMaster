@@ -315,6 +315,11 @@ namespace DungeonMaster.Character.Enemy
 
             _isWindingUp = true;
             _chargeStateEnd = Time.time + _enemySO.chargeWindup;
+
+            // 돌진 준비를 소리로도 알린다.
+            // 준비 동작이 짧아서 화면 구석에서 일어나면 눈으로만은 놓치기 쉽다.
+            // 이 소리가 "지금 피해라"는 신호가 된다
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.2f);
         }
 
         // 원거리형: 선호 거리를 유지하며 주기적으로 발사
