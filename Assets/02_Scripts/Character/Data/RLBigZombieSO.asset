@@ -19,6 +19,8 @@ MonoBehaviour:
   attackDamage: 26
   attackCooldown: 1.2
   behavior: 0
+  coinDrop: 1
+  healthDropChance: 0.07
   knockbackResist: 0.7
   chargeTriggerDistance: 4.5
   chargeWindup: 0.5

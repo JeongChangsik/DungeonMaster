@@ -133,6 +133,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Character.Enemy.RoguelikeEnemy
   _enemySO: {fileID: 11400000, guid: a332f89aec985314fa9541dfd2b6789a, type: 2}
   _dropCoin: {fileID: 977541038206904769, guid: de2919aa45a305a478a31e1ff9410851, type: 3}
+  _dropHealth: {fileID: 2293119399818704720, guid: 6ca6ece0854ad2b4ebd405c1fe2f6e9b, type: 3}
   _flashDuration: 0.08
   _flashColor: {r: 1, g: 0.35, b: 0.35, a: 1}
   _showDamageNumber: 1

@@ -26,6 +26,8 @@ namespace DungeonMaster.Character.Enemy
         // chaseDistance, attackDistance는 FSM 전용이라 이 클래스에선 쓰지 않음
         [SerializeField] private EnemySO _enemySO;
         [SerializeField] GameObject _dropCoin;
+        [Tooltip("가끔 떨구는 회복 아이템. 확률은 EnemySO.healthDropChance 로 조절")]
+        [SerializeField] private GameObject _dropHealth;
 
         [Header("타격 연출")]
         [Tooltip("피격 시 번쩍이는 시간")]
@@ -474,6 +476,7 @@ namespace DungeonMaster.Character.Enemy
 
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null);
             DropCoin();
+            DropHealth();
 
             // _isDead 가 true 라 이 시점부터는 움직이지도, 접촉 피해를 주지도 않는다.
             // 그래서 연출 때문에 잠깐 남아 있어도 플레이어에게 불리하지 않다
@@ -587,6 +590,18 @@ namespace DungeonMaster.Character.Enemy
             transform.localScale = _baseScale;
         }
         #endregion
+
+        // 가끔만 나온다. 항상 나오면 체력이 자원이 아니게 되고,
+        // 아예 안 나오면 한 번 깎인 체력을 되돌릴 방법이 사실상 없다
+        private void DropHealth()
+        {
+            if (_dropHealth == null) return;
+            if (_enemySO.healthDropChance <= 0f) return;
+            if (Random.value > _enemySO.healthDropChance) return;
+
+            if (ObjectPool.Instance != null) ObjectPool.Instance.Spawn(_dropHealth, transform.position);
+            else Instantiate(_dropHealth, transform.position, Quaternion.identity);
+        }
 
         private void DropCoin()
         {
