@@ -8,6 +8,7 @@ namespace DungeonMaster.Weapon
         Orbit,          // 공전 칼날
         Projectile,     // 투척 단검
         Aura,           // 화염 오라
+        Boomerang,      // 부메랑 도끼
     }
 
     // 무기의 어떤 값을 올릴 것인가.

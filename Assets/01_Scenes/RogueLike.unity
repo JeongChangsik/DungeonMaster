@@ -119,6 +119,62 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &56933659
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 56933660}
+  - component: {fileID: 56933661}
+  m_Layer: 0
+  m_Name: BoomerangMuzzle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &56933660
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56933659}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1823148060}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &56933661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56933659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfdeee96fbd61a8409fe75d559ec24c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Weapon.WeaponBoomerang
+  _damage: 18
+  _projectilePrefab: {fileID: 9033479527017514766, guid: 51987057e4c4b3544a4926699a5ba435, type: 3}
+  _interval: 2
+  _count: 1
+  _spreadAngle: 40
+  _projectileSpeed: 7
+  _range: 5
+  _pierce: 2
+  _enemyLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  _angleOffset: 0
 --- !u!1 &91852171
 GameObject:
   m_ObjectHideFlags: 0
@@ -160,6 +216,8 @@ MonoBehaviour:
   - prefab: {fileID: 4884402931318333515, guid: 3de703c800f253441a26d1a89cabd64c, type: 3}
     initialSize: 50
   - prefab: {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
+    initialSize: 30
+  - prefab: {fileID: 9033479527017514766, guid: 51987057e4c4b3544a4926699a5ba435, type: 3}
     initialSize: 30
 --- !u!4 &91852173
 Transform:
@@ -68042,6 +68100,7 @@ Transform:
   - {fileID: 1609991148}
   - {fileID: 1216364260}
   - {fileID: 1989438496}
+  - {fileID: 56933660}
   m_Father: {fileID: 285568322}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1823148061
