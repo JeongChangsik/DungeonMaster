@@ -1,5 +1,7 @@
+using System.Collections;
 using DungeonMaster.Core;
-using Unity.VisualScripting;
+using MoreMountains.Feedbacks;
+using MoreMountains.Tools;
 using UnityEngine;
 
 namespace DungeonMaster.Character.Enemy
@@ -24,6 +26,16 @@ namespace DungeonMaster.Character.Enemy
         [SerializeField] private EnemySO _enemySO;
         [SerializeField] GameObject _dropCoin;
 
+        [Header("타격 연출")]
+        [Tooltip("피격 시 번쩍이는 시간")]
+        [SerializeField] private float _flashDuration = 0.08f;
+        // SpriteRenderer.color 는 곱연산이라 흰색(1,1,1)은 항등원이다.
+        // 스프라이트 기본 색이 흰색이므로 "흰색 플래시"는 화면상 아무 변화가 없다.
+        // 진짜 흰색 발광을 하려면 전용 셰이더가 필요하므로, 여기서는 붉게 물들이는 방식을 쓴다.
+        [SerializeField] private Color _flashColor = new Color(1f, 0.35f, 0.35f, 1f);
+        [Tooltip("피격 시 데미지 숫자를 띄운다. 씬에 MMFloatingTextSpawner 가 있어야 보인다")]
+        [SerializeField] private bool _showDamageNumber = true;
+
         // 컴포넌트 캐싱
         private Rigidbody2D _rb;
         private SpriteRenderer _spriteRenderer;
@@ -38,6 +50,11 @@ namespace DungeonMaster.Character.Enemy
         // 겹쳐 있는 동안 데미지가 매 프레임 들어가지 않도록 하는 쿨타임
         private float _lastContactTime;
 
+        // 타격 연출용
+        private MMHealthBar _healthBar;     // 없으면 체력바를 안 그릴 뿐, 동작에는 지장 없음
+        private Color _baseColor;
+        private Coroutine _flashRoutine;
+
         // 애니메이션 해시(RLSwampyAnim: IsWalk(bool), Hit(trigger))
         private static readonly int hashIsWalk = Animator.StringToHash("IsWalk");
         private static readonly int hashHit = Animator.StringToHash("Hit");
@@ -48,6 +65,9 @@ namespace DungeonMaster.Character.Enemy
             _rb = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _animator = GetComponent<Animator>();
+
+            _healthBar = GetComponent<MMHealthBar>();
+            _baseColor = _spriteRenderer.color;
 
             _currHp = _enemySO.maxHp;
         }
@@ -99,6 +119,11 @@ namespace DungeonMaster.Character.Enemy
             if (_isDead) return;
 
             _currHp -= damage;
+
+            ShowDamageNumber(damage);
+            Flash();
+            UpdateHealthBar();
+
             if (_currHp > 0f)
             {
                 _animator.SetTrigger(hashHit);
@@ -106,6 +131,42 @@ namespace DungeonMaster.Character.Enemy
             }
 
             Die();
+        }
+        #endregion
+
+        #region 타격 연출
+        private void ShowDamageNumber(float damage)
+        {
+            if (!_showDamageNumber) return;
+
+            // 씬에 MMFloatingTextSpawner 가 없으면 아무도 이 이벤트를 듣지 않아서 조용히 무시된다
+            MMFloatingTextSpawnEvent.Trigger(
+                new MMChannelData(MMChannelModes.Int, 0, null),
+                transform.position,
+                Mathf.Max(1, Mathf.RoundToInt(damage)).ToString(),
+                Vector3.up,
+                1f);
+        }
+
+        // 연속으로 맞으면 코루틴이 겹쳐서 원래 색으로 못 돌아오므로 항상 이전 것을 멈춘다
+        private void Flash()
+        {
+            if (_flashRoutine != null) StopCoroutine(_flashRoutine);
+            _flashRoutine = StartCoroutine(FlashCo());
+        }
+
+        private IEnumerator FlashCo()
+        {
+            _spriteRenderer.color = _flashColor;
+            yield return new WaitForSeconds(_flashDuration);
+            _spriteRenderer.color = _baseColor;
+            _flashRoutine = null;
+        }
+
+        private void UpdateHealthBar()
+        {
+            if (_healthBar == null) return;
+            _healthBar.UpdateBar(Mathf.Max(0f, _currHp), 0f, _enemySO.maxHp, true);
         }
         #endregion
 
