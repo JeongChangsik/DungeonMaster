@@ -1,7 +1,9 @@
 using UnityEngine;
 using DungeonMaster.Character.Player;
 
-public class Coin : MonoBehaviour
+// 경험치 코인. 오브젝트 풀에서 재사용된다.
+// IPoolable 은 반드시 프리팹 루트에 있어야 한다(ObjectPool.Spawn 이 GetComponent 로 찾음).
+public class Coin : MonoBehaviour, IPoolable
 {
     [SerializeField] private int _expAmount = 10;
 
@@ -21,12 +23,22 @@ public class Coin : MonoBehaviour
     // 이게 없으면 경계선 근처에서 붙었다 떨어졌다 하며 덜덜 떨림
     private bool _isChasing;
 
+    // 이미 반납했는지. 먹은 프레임에 트리거가 또 들어와도 중복 반납되지 않게
+    private bool _released;
+
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
     }
 
     private void Start()
+    {
+        FindPlayer();
+    }
+
+    // Start 는 최초 1회뿐이라 풀에서 재사용될 때는 안 불린다.
+    // 씬을 다시 시작하면 옛 플레이어가 파괴되므로 매번 다시 잡아야 한다.
+    private void FindPlayer()
     {
         GameObject go = GameObject.FindWithTag("PLAYER");
         if (go == null) return;
@@ -57,9 +69,33 @@ public class Coin : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (_released) return;
         if (!other.CompareTag("PLAYER")) return;
 
         other.GetComponent<RoguelikePlayer>()?.AddExp(_expAmount);
-        Destroy(gameObject);
+
+        _released = true;
+        if (ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);
+        else Destroy(gameObject);
     }
+
+    #region IPoolable
+    // Awake/Start 는 최초 1회뿐이므로 재사용 시 초기화는 여기서 한다
+    public void OnSpawnFromPool()
+    {
+        _isChasing = false;
+        _released = false;
+        _currentSpeed = 1.0f;
+
+        if (_rb != null) _rb.linearVelocity = Vector2.zero;
+
+        // 씬 재시작 대비. 파괴된 옛 플레이어를 물고 있으면 안 된다
+        if (_player == null) FindPlayer();
+    }
+
+    public void OnReturnToPool()
+    {
+        if (_rb != null) _rb.linearVelocity = Vector2.zero;
+    }
+    #endregion
 }

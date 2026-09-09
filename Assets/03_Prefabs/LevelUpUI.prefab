@@ -1230,6 +1230,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5db6a89b1b3d96d4095bf74d42febe40, type: 2}
   - {fileID: 11400000, guid: fecfaf8623d1b114a8eb3257010a6b0c, type: 2}
   - {fileID: 11400000, guid: 9d3dbee6a97d5064e9a9abb1adf52669, type: 2}
+  - {fileID: 11400000, guid: 14321ef925e439043a3b814f1979ba56, type: 2}
+  - {fileID: 11400000, guid: f33141c27dd01244d9c129f0ea9cc1f5, type: 2}
+  - {fileID: 11400000, guid: 705381da8b368a74dada44300d96f0c2, type: 2}
   _startingUpgrades: []
 --- !u!1 &6012831025673336529
 GameObject:

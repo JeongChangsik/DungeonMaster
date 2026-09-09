@@ -205,7 +205,8 @@ namespace DungeonMaster.Character.Enemy
             // 부모를 지정하지 않는 것이 중요함
             // Instantiate(_dropCoin, transform)처럼 자신을 부모로 주면
             // 바로 아래 Destroy(gameObject)에서 코인까지 같이 사라짐
-            Instantiate(_dropCoin, transform.position, Quaternion.identity);
+            if (ObjectPool.Instance != null) ObjectPool.Instance.Spawn(_dropCoin, transform.position);
+            else Instantiate(_dropCoin, transform.position, Quaternion.identity);
         }
     }
 }
