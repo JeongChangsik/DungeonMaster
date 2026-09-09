@@ -16,5 +16,15 @@ MonoBehaviour:
   moveSpeed: 1.3
   chaseDistance: 5
   attackDistance: 1
-  attackDamage: 40
+  attackDamage: 26
   attackCooldown: 1.2
+  behavior: 0
+  chargeTriggerDistance: 4.5
+  chargeWindup: 0.5
+  chargeSpeedMul: 4
+  chargeDuration: 0.45
+  chargeCooldown: 2.5
+  preferredDistance: 6
+  shootInterval: 2
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 5

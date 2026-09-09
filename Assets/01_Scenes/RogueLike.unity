@@ -68058,7 +68058,7 @@ MonoBehaviour:
   _maxAliveStart: 30
   _maxAliveEnd: 160
   _hpScaleEnd: 4
-  _damageScaleEnd: 2.5
+  _damageScaleEnd: 1.6
 --- !u!4 &1763315195
 Transform:
   m_ObjectHideFlags: 0

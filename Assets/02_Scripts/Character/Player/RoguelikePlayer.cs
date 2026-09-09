@@ -51,6 +51,12 @@ namespace DungeonMaster.Character.Player
         public float WeaponDamageMul => _mulWeaponDamage;
         public float WeaponAreaMul => _mulWeaponArea;
         public float WeaponRateMul => _mulWeaponRate;
+
+        // 초당 체력 회복. 회복 수단이 전혀 없으면 한 번 깎인 체력을 되돌릴 방법이 없다
+        private float _regenPerSecond;
+        private float _regenBuffer;      // 1 이상 쌓이면 정수 단위로 회복시킨다
+
+        public float HealthRegen => _regenPerSecond;
         #endregion
 
         #region 무적 시간
@@ -109,6 +115,8 @@ namespace DungeonMaster.Character.Player
         private void Update()
         {
             if (_isDead) return;
+
+            TickRegen();
 
             if (Time.time < lastAttackTime + AttackCooldown) return;
 
@@ -203,6 +211,21 @@ namespace DungeonMaster.Character.Player
             _expBar.UpdateBar01((float)_currExp / _maxExp);
         }
 
+        // 매 프레임 소수점 단위로 회복시키면 HP바가 계속 떨리므로
+        // 1 이상 쌓였을 때만 실제로 회복시킨다
+        private void TickRegen()
+        {
+            if (_regenPerSecond <= 0f) return;
+            if (_currHp >= MaxHp) { _regenBuffer = 0f; return; }
+
+            _regenBuffer += _regenPerSecond * Time.deltaTime;
+            if (_regenBuffer < 1f) return;
+
+            float amount = Mathf.Floor(_regenBuffer);
+            _regenBuffer -= amount;
+            Heal(amount);
+        }
+
         // 레벨업 카드(PlayerStatUpgradeSO)가 호출하는 단일 진입점
         public void ApplyStatUpgrade(PlayerStat stat, float flat, float percent)
         {
@@ -227,6 +250,10 @@ namespace DungeonMaster.Character.Player
 
                 case PlayerStat.ExpGain:
                     _mulExpGain += percent;
+                    break;
+
+                case PlayerStat.HealthRegen:
+                    _regenPerSecond += flat;
                     break;
 
                 // 전역 무기 배율은 값만 바꿔선 부족하다.

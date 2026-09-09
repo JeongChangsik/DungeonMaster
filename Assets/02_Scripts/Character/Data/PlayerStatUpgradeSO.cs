@@ -17,6 +17,8 @@ public enum PlayerStat
     WeaponDamage,       // 모든 무기 피해량
     WeaponArea,         // 모든 무기 범위
     WeaponRate,         // 모든 무기 속도
+
+    HealthRegen,        // 초당 체력 회복
 }
 
 [CreateAssetMenu(menuName = "DungeonMaster/Upgrade/플레이어 스탯")]
