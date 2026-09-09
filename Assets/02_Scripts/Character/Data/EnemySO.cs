@@ -24,6 +24,10 @@ public class EnemySO : ScriptableObject
     [Header("행동 유형 (뱀서라이크 전용)")]
     public EnemyBehavior behavior = EnemyBehavior.Chase;
 
+    [Header("피격 반응 (뱀서라이크 전용)")]
+    [Tooltip("맞았을 때 밀려나는 것에 대한 저항. 0이면 그대로 밀리고, 1이면 꿈쩍도 안 한다")]
+    [Range(0f, 1f)] public float knockbackResist = 0f;
+
     [Header("돌진형 설정")]
     [Tooltip("이 거리 안에 들어오면 돌진을 준비한다")]
     public float chargeTriggerDistance = 4.5f;

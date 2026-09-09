@@ -19,6 +19,7 @@ MonoBehaviour:
   attackDamage: 14
   attackCooldown: 0.8
   behavior: 1
+  knockbackResist: 0
   chargeTriggerDistance: 4.5
   chargeWindup: 0.45
   chargeSpeedMul: 3.5

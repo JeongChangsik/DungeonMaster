@@ -36,6 +36,16 @@ namespace DungeonMaster.Character.Enemy
         [SerializeField] private Color _flashColor = new Color(1f, 0.35f, 0.35f, 1f);
         [Tooltip("피격 시 데미지 숫자를 띄운다. 씬에 MMFloatingTextSpawner 가 있어야 보인다")]
         [SerializeField] private bool _showDamageNumber = true;
+        [Tooltip("맞았을 때 뒤로 밀려나는 거리. 적별 저항은 EnemySO.knockbackResist 로 조절")]
+        [SerializeField] private float _knockbackDistance = 0.35f;
+        [Tooltip("밀려나는 동안 스스로 움직이지 못하는 시간")]
+        [SerializeField] private float _knockbackDuration = 0.09f;
+
+        [Header("사망 연출")]
+        [Tooltip("죽을 때 부풀었다 쪼그라들며 사라지는 시간. 0이면 즉시 사라진다")]
+        [SerializeField] private float _deathPopDuration = 0.14f;
+        [Tooltip("코인이 정확히 같은 자리에 겹치지 않도록 흩뿌리는 반경")]
+        [SerializeField] private float _coinScatterRadius = 0.25f;
 
         // 컴포넌트 캐싱
         private Rigidbody2D _rb;
@@ -65,6 +75,9 @@ namespace DungeonMaster.Character.Enemy
         private Vector2 _chargeDir;
         private float _nextShootTime;
 
+        // 넉백. 이 시각까지는 스스로 움직이지 않고 밀려나는 속도를 유지한다
+        private float _knockbackEnd;
+
         public float MaxHp { get { return _enemySO.maxHp * _hpScale; } }
         public float ContactDamage { get { return _enemySO.attackDamage * _damageScale; } }
 
@@ -74,6 +87,7 @@ namespace DungeonMaster.Character.Enemy
         // 타격 연출용
         private MMHealthBar _healthBar;     // 없으면 체력바를 안 그릴 뿐, 동작에는 지장 없음
         private Color _baseColor;
+        private Vector3 _baseScale;
         private Coroutine _flashRoutine;
 
         // 애니메이션 해시(RLSwampyAnim: IsWalk(bool), Hit(trigger))
@@ -89,6 +103,7 @@ namespace DungeonMaster.Character.Enemy
 
             _healthBar = GetComponent<MMHealthBar>();
             _baseColor = _spriteRenderer.color;
+            _baseScale = transform.localScale;
 
             _currHp = MaxHp;
         }
@@ -119,6 +134,11 @@ namespace DungeonMaster.Character.Enemy
         {
             // 플레이어가 죽어서 파괴되면 target이 null이 됨
             if (_isDead || _target == null) return;
+
+            // 밀려나는 중에는 아무 행동도 하지 않는다.
+            // 여기서 return 하지 않으면 아래 분기가 매 프레임 속도를 덮어써서
+            // 넉백이 화면상 전혀 보이지 않는다
+            if (Time.time < _knockbackEnd) return;
 
             switch (_enemySO.behavior)
             {
@@ -254,6 +274,7 @@ namespace DungeonMaster.Character.Enemy
 
             ShowDamageNumber(damage);
             Flash();
+            Knockback();
             UpdateHealthBar();
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyHitSFX : null);
 
@@ -306,6 +327,26 @@ namespace DungeonMaster.Character.Enemy
             _flashRoutine = null;
         }
 
+        // 데미지를 준 쪽의 위치를 인자로 받지 않는다.
+        // IDamagable.TakeDamage(float) 는 구 GamePlay 씬의 Enemy 도 구현하는 인터페이스라
+        // 시그니처를 바꿀 수 없기 때문이다.
+        // 대신 "플레이어 반대 방향"으로 민다. 피해가 사실상 전부 플레이어에게서 오므로
+        // (공전 칼날/오라는 플레이어 몸에서, 단검/도끼도 플레이어가 던진다) 결과가 거의 같다.
+        private void Knockback()
+        {
+            if (_knockbackDistance <= 0f || _rb == null || _target == null) return;
+
+            float power = _knockbackDistance * (1f - Mathf.Clamp01(_enemySO.knockbackResist));
+            if (power <= 0.001f) return;
+
+            Vector2 away = _rb.position - (Vector2)_target.position;
+            if (away.sqrMagnitude < 0.0001f) away = Random.insideUnitCircle.normalized;
+
+            // 거리 / 시간 = 속도. 이 속도를 넉백 시간 동안 유지하면 딱 그 거리만큼 밀린다
+            _rb.linearVelocity = away.normalized * (power / Mathf.Max(0.01f, _knockbackDuration));
+            _knockbackEnd = Time.time + _knockbackDuration;
+        }
+
         private void UpdateHealthBar()
         {
             if (_healthBar == null) return;
@@ -321,7 +362,56 @@ namespace DungeonMaster.Character.Enemy
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null);
             DropCoin();
 
-            // 사망 애니메이션이 없으므로 바로 제거
+            // _isDead 가 true 라 이 시점부터는 움직이지도, 접촉 피해를 주지도 않는다.
+            // 그래서 연출 때문에 잠깐 남아 있어도 플레이어에게 불리하지 않다
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+
+            // 사망 애니메이션이 없어서 그냥 사라지면 "때린 건지 사라진 건지" 알기 어렵다.
+            // 살짝 부풀었다가 쪼그라들며 투명해지는 짧은 연출을 넣는다
+            if (_deathPopDuration > 0f && gameObject.activeInHierarchy) StartCoroutine(DeathPopCo());
+            else Remove();
+        }
+
+        private IEnumerator DeathPopCo()
+        {
+            // 체력바가 0인 채로 같이 쪼그라들면 지저분하므로 먼저 끈다
+            if (_healthBar != null) _healthBar.enabled = false;
+
+            float elapsed = 0f;
+            while (elapsed < _deathPopDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / _deathPopDuration);
+
+                // 앞 30% 구간에서 1.25배까지 부풀고, 나머지 구간에서 0까지 줄어든다
+                float scale = t < 0.3f
+                    ? Mathf.Lerp(1f, 1.25f, t / 0.3f)
+                    : Mathf.Lerp(1.25f, 0f, (t - 0.3f) / 0.7f);
+
+                transform.localScale = _baseScale * scale;
+
+                if (_spriteRenderer != null)
+                {
+                    Color c = _spriteRenderer.color;
+                    c.a = 1f - t;
+                    _spriteRenderer.color = c;
+                }
+
+                yield return null;
+            }
+
+            Remove();
+        }
+
+        // 풀 출신이면 반납, 아니면 파괴.
+        // 씬에 직접 배치된 적을 Release 하면 풀이 모르는 오브젝트라 경고만 내고 무시해서
+        // 죽었는데 화면에 그대로 남는다
+        private void Remove()
+        {
+            transform.localScale = _baseScale;
+            if (_spriteRenderer != null) _spriteRenderer.color = _baseColor;
+            if (_healthBar != null) _healthBar.enabled = true;
+
             if (_fromPool && ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);
             else Destroy(gameObject);
         }
@@ -344,6 +434,12 @@ namespace DungeonMaster.Character.Enemy
             _nextChargeTime = 0f;
             _chargeStateEnd = 0f;
             _nextShootTime = 0f;
+            _knockbackEnd = 0f;
+
+            // 사망 연출로 크기가 0까지 줄고 투명해진 채로 반납됐을 수 있다.
+            // 이걸 되돌리지 않으면 다음에 "보이지 않는 적"이 스폰된다
+            transform.localScale = _baseScale;
+            if (_healthBar != null) _healthBar.enabled = true;
 
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
 
@@ -373,6 +469,7 @@ namespace DungeonMaster.Character.Enemy
 
             if (_spriteRenderer != null) _spriteRenderer.color = _baseColor;
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
+            transform.localScale = _baseScale;
         }
         #endregion
 
@@ -383,8 +480,14 @@ namespace DungeonMaster.Character.Enemy
             // 부모를 지정하지 않는 것이 중요함
             // Instantiate(_dropCoin, transform)처럼 자신을 부모로 주면
             // 바로 아래 Destroy(gameObject)에서 코인까지 같이 사라짐
-            if (ObjectPool.Instance != null) ObjectPool.Instance.Spawn(_dropCoin, transform.position);
-            else Instantiate(_dropCoin, transform.position, Quaternion.identity);
+            // 적이 뭉쳐서 죽으면 코인이 완전히 겹쳐 한 개처럼 보인다. 조금씩 흩뿌린다
+            Vector3 offset = _coinScatterRadius > 0f
+                ? (Vector3)(Random.insideUnitCircle * _coinScatterRadius)
+                : Vector3.zero;
+            Vector3 spot = transform.position + offset;
+
+            if (ObjectPool.Instance != null) ObjectPool.Instance.Spawn(_dropCoin, spot);
+            else Instantiate(_dropCoin, spot, Quaternion.identity);
         }
     }
 }
