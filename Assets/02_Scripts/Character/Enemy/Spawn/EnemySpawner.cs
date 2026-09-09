@@ -217,7 +217,13 @@ namespace DungeonMaster.Spawn
             Vector3 position;
             if (!TryGetRingPosition(out position) && !TryGetFallbackPosition(out position)) return;
 
-            GameObject enemy = Instantiate(prefab, position, Quaternion.identity);
+            // 풀이 있으면 재사용, 없으면 그냥 생성.
+            // 적이 초당 수 마리씩 생겼다 사라지므로 풀링이 없으면 GC 스파이크가 난다.
+            GameObject enemy = ObjectPool.Instance != null
+                ? ObjectPool.Instance.Spawn(prefab, position)
+                : Instantiate(prefab, position, Quaternion.identity);
+
+            if (enemy == null) return;
             _alive.Add(enemy);
 
             // 경과 시간에 따른 능력치 배율 적용.

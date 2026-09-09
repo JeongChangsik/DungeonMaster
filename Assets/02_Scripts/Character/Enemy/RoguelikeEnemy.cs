@@ -18,7 +18,7 @@ namespace DungeonMaster.Character.Enemy
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(SpriteRenderer))]
-    public class RoguelikeEnemy : MonoBehaviour, IDamagable
+    public class RoguelikeEnemy : MonoBehaviour, IDamagable, IPoolable
     {
         [Header("기본 스탯")]
         // maxHp / moveSpeed / attackDamage / attackCooldown 만 사용
@@ -51,6 +51,11 @@ namespace DungeonMaster.Character.Enemy
         private float _hpScale = 1f;
         private float _damageScale = 1f;
 
+        // 풀에서 나온 개체인지. 씬에 직접 배치된 적은 풀이 모르므로 Release 하면 안 된다.
+        // (ObjectPool.Release 는 모르는 오브젝트를 경고만 내고 무시해서, 죽어도 안 사라지는
+        //  좀비 오브젝트가 된다)
+        private bool _fromPool;
+
         public float MaxHp { get { return _enemySO.maxHp * _hpScale; } }
         public float ContactDamage { get { return _enemySO.attackDamage * _damageScale; } }
 
@@ -81,10 +86,17 @@ namespace DungeonMaster.Character.Enemy
 
         private void Start()
         {
+            AcquireTarget();
+        }
+
+        // Start 는 최초 1회뿐이라 풀에서 재사용될 때는 안 불린다.
+        // 씬을 다시 시작하면 파괴된 옛 플레이어를 물고 있게 되므로 매번 다시 잡는다.
+        private void AcquireTarget()
+        {
             GameObject player = GameObject.FindWithTag("PLAYER");
             if (player == null)
             {
-                Debug.LogError($"RoguelikeEnemy::Start() PLAYER 태그를 가진 오브젝트가 없습니다.");
+                Debug.LogError($"RoguelikeEnemy::AcquireTarget() PLAYER 태그를 가진 오브젝트가 없습니다.");
                 return;
             }
             _target = player.transform;
@@ -197,8 +209,51 @@ namespace DungeonMaster.Character.Enemy
             DropCoin();
 
             // 사망 애니메이션이 없으므로 바로 제거
-            Destroy(gameObject);
+            if (_fromPool && ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);
+            else Destroy(gameObject);
         }
+
+        #region IPoolable
+        // Awake/Start 는 최초 1회뿐이므로 재사용 시 초기화는 전부 여기서 한다.
+        // 하나라도 빠뜨리면 "죽은 채로 스폰되는 적", "체력이 깎인 채 나오는 적",
+        // "스폰하자마자 피격 애니메이션을 재생하는 적" 같은 버그가 된다.
+        public void OnSpawnFromPool()
+        {
+            _fromPool = true;
+            _isDead = false;
+            _currHp = MaxHp;
+            _lastContactTime = 0f;
+
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+
+            if (_spriteRenderer != null)
+            {
+                _spriteRenderer.color = _baseColor;   // 붉게 물든 채로 반납됐을 수 있다
+                _spriteRenderer.enabled = true;
+            }
+
+            if (_animator != null)
+            {
+                // 래치된 트리거가 남아 있으면 스폰 즉시 피격 모션이 재생된다
+                _animator.ResetTrigger(hashHit);
+                _animator.SetBool(hashIsWalk, true);
+            }
+
+            AcquireTarget();
+        }
+
+        public void OnReturnToPool()
+        {
+            if (_flashRoutine != null)
+            {
+                StopCoroutine(_flashRoutine);
+                _flashRoutine = null;
+            }
+
+            if (_spriteRenderer != null) _spriteRenderer.color = _baseColor;
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+        }
+        #endregion
 
         private void DropCoin()
         {

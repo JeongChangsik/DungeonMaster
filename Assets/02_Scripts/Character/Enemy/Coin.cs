@@ -26,6 +26,9 @@ public class Coin : MonoBehaviour, IPoolable
     // 이미 반납했는지. 먹은 프레임에 트리거가 또 들어와도 중복 반납되지 않게
     private bool _released;
 
+    // 풀에서 나온 개체인지. 씬에 직접 놓인 코인은 Release 하면 안 사라진다
+    private bool _fromPool;
+
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
@@ -76,7 +79,7 @@ public class Coin : MonoBehaviour, IPoolable
         AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.coinPickupSFX : null, 0.15f);
 
         _released = true;
-        if (ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);
+        if (_fromPool && ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);
         else Destroy(gameObject);
     }
 
@@ -84,6 +87,7 @@ public class Coin : MonoBehaviour, IPoolable
     // Awake/Start 는 최초 1회뿐이므로 재사용 시 초기화는 여기서 한다
     public void OnSpawnFromPool()
     {
+        _fromPool = true;
         _isChasing = false;
         _released = false;
         _currentSpeed = 1.0f;

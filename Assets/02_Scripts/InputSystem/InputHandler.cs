@@ -24,6 +24,16 @@ namespace DungeonMaster.InputSystem
         #region 유니티 생명주기
         private void Awake()
         {
+            EnsureInitialized();
+        }
+
+        // 에디터에서 스크립트를 다시 컴파일하면(도메인 리로드) OnEnable 은 다시 불리는데
+        // Awake 는 다시 불리지 않는다. 그래서 _inputActions 가 null 인 채로 OnEnable 이
+        // 실행되어 NullReferenceException 이 났다. 양쪽에서 이 메서드를 부르게 해 막는다.
+        private void EnsureInitialized()
+        {
+            if (_inputActions != null) return;
+
             _inputActions = new InputSystem_Actions();
 
             // 액션을 찾아와 바인딩
@@ -34,6 +44,8 @@ namespace DungeonMaster.InputSystem
 
         private void OnEnable()
         {
+            EnsureInitialized();
+
             // OnEnable 에서는 가장 먼저 액션 시스템을 활성화
             _inputActions.Enable();
 
@@ -54,6 +66,8 @@ namespace DungeonMaster.InputSystem
 
         private void OnDisable()
         {
+            if (_inputActions == null) return;
+
             // OnDisable 에서는 가장 먼저 액션 시스템을 비활성화 => 안하면 메모리 누수 발생
             _inputActions.Disable();
 
