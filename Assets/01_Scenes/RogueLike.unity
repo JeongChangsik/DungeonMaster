@@ -119,6 +119,55 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &91852171
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 91852173}
+  - component: {fileID: 91852172}
+  m_Layer: 0
+  m_Name: ObjectPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &91852172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91852171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 631da513d922015479e94e6ca16840f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectPool
+  _configs:
+  - prefab: {fileID: 759937814277800801, guid: f3e31783c4f9f3b4fbf9876519565c07, type: 3}
+    initialSize: 60
+  - prefab: {fileID: 977541038206904769, guid: de2919aa45a305a478a31e1ff9410851, type: 3}
+    initialSize: 120
+--- !u!4 &91852173
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91852171}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &272529368
 GameObject:
   m_ObjectHideFlags: 0
@@ -66673,6 +66722,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1216364260}
+  - component: {fileID: 1216364261}
   m_Layer: 8
   m_Name: ProjectileMuzzle
   m_TagString: Untagged
@@ -66695,6 +66745,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1823148060}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1216364261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216364259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea1e1f238436a844aa15d74a019ebb6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Weapon.WeaponProjectile
+  _damage: 12
+  _projectilePrefab: {fileID: 759937814277800801, guid: f3e31783c4f9f3b4fbf9876519565c07, type: 3}
+  _interval: 1.1
+  _count: 1
+  _spreadAngle: 14
+  _projectileSpeed: 10
+  _range: 9
+  _pierce: 0
+  _enemyLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  _angleOffset: -90
 --- !u!1001 &1403484769
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -68312,3 +68386,4 @@ SceneRoots:
   - {fileID: 1403484769}
   - {fileID: 1763315195}
   - {fileID: 1098500559}
+  - {fileID: 91852173}

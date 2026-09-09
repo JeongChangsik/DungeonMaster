@@ -18,5 +18,6 @@ namespace DungeonMaster.Weapon
         Count,      // 개수 (칼날 수 / 발사 수)
         Range,      // 범위 (궤도 반경 / 사거리 / 오라 반경)
         Rate,       // 속도 (회전 속도 / 연사 속도 / 틱 속도)
+        Pierce,     // 관통 (투사체 전용)
     }
 }
