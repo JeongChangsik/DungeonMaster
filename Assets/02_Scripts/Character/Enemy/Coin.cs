@@ -76,7 +76,8 @@ public class Coin : MonoBehaviour, IPoolable
         if (!other.CompareTag("PLAYER")) return;
 
         other.GetComponent<RoguelikePlayer>()?.AddExp(_expAmount);
-        AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.coinPickupSFX : null, 0.15f);
+        // 한 번에 여러 개를 줍는 일이 잦아서 간격을 넉넉히 준다
+        AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.coinPickupSFX : null, 0.15f, 0.15f);
 
         _released = true;
         if (_fromPool && ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);

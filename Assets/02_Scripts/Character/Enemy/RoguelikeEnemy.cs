@@ -327,8 +327,11 @@ namespace DungeonMaster.Character.Enemy
 
             // 돌진 준비를 소리로도 알린다.
             // 준비 동작이 짧아서 화면 구석에서 일어나면 눈으로만은 놓치기 쉽다.
-            // 이 소리가 "지금 피해라"는 신호가 된다
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.2f);
+            // 이 소리가 "지금 피해라"는 신호가 된다.
+            //
+            // 간격을 길게 잡은 이유: 후반에는 수십 마리가 동시에 준비 동작에 들어간다.
+            // 초당 스무 번씩 울리면 경고가 아니라 소음이 되어 오히려 신호가 죽는다
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.2f, 0.25f);
         }
 
         // 원거리형: 선호 거리를 유지하며 주기적으로 발사
@@ -384,7 +387,7 @@ namespace DungeonMaster.Character.Enemy
 
             _isFusing = true;
             _fuseEnd = Time.time + _enemySO.bombFuse;
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.25f);
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.25f, 0.25f);
         }
 
         private void Detonate()
@@ -402,7 +405,7 @@ namespace DungeonMaster.Character.Enemy
                 }
             }
 
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.bombExplodeSFX : null, 0.2f);
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.bombExplodeSFX : null, 0.2f, 0.2f);
 
             // 자기 자신도 사라진다. 죽은 것으로 처리하므로 코인은 떨군다
             _currHp = 0f;
@@ -450,7 +453,8 @@ namespace DungeonMaster.Character.Enemy
             Flash();
             Knockback();
             UpdateHealthBar();
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyHitSFX : null);
+            // 초당 수십 번 일어나는 사건이라 간격을 넉넉히 준다. 안 그러면 소리의 벽이 된다
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyHitSFX : null, 0.08f, 0.15f);
 
             if (_currHp > 0f)
             {
@@ -578,7 +582,7 @@ namespace DungeonMaster.Character.Enemy
             // 마지막 타격은 반드시 보여준다. 죽인 한 방이 안 보이면 허전하다
             FlushDamageNumber();
 
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null);
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null, 0.08f, 0.18f);
             DropCoin();
             DropHealth();
 

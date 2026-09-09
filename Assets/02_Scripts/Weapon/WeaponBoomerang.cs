@@ -60,7 +60,7 @@ namespace DungeonMaster.Weapon
             float damage = Damage;
             float range = Range;
 
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.weaponThrowSFX : null, 0.15f);
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.weaponThrowSFX : null, 0.15f, 0.12f);
 
             float start = -(count - 1) * 0.5f * _spreadAngle;
 

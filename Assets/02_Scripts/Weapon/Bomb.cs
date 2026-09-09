@@ -115,7 +115,7 @@ namespace DungeonMaster.Weapon
                 if (target != null) target.TakeDamage(_damage);
             }
 
-            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.bombExplodeSFX : null, 0.15f);
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.bombExplodeSFX : null, 0.15f, 0.2f);
 
             StartCoroutine(FlashCo());
         }
