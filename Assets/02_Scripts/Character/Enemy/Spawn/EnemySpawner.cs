@@ -58,6 +58,15 @@ namespace DungeonMaster.Spawn
         [Min(1)] [SerializeField] private int _maxAliveStart = 30;
         [Min(1)] [SerializeField] private int _maxAliveEnd = 160;
 
+        [Header("뒤처진 적 회수")]
+        // 느리고 튼튼한 적(거대 좀비, 큰 악마)은 잘 죽지 않아서 화면 밖에 계속 쌓인다.
+        // 그대로 두면 동시 생존 상한을 이들이 다 차지해서, 후반에는 굼뜬 벽만 남고
+        // 빠른 적이 아예 안 나오게 된다. 실측: 상한 160 중 122마리가 탱커였다.
+        [Tooltip("스폰 링 반경의 몇 배까지 멀어지면 창고로 되돌릴지. 0이면 회수하지 않는다")]
+        [SerializeField] private float _despawnDistanceMul = 2.2f;
+        [Tooltip("몇 초마다 뒤처진 적을 확인할지")]
+        [SerializeField] private float _despawnCheckInterval = 1f;
+
         [Header("난이도 - 적 능력치 배율")]
         [SerializeField] private float _hpScaleEnd = 4f;
         [SerializeField] private float _damageScaleEnd = 2.5f;
@@ -71,6 +80,7 @@ namespace DungeonMaster.Spawn
 
         private float _lastSpawnTime;
         private float _startTime;
+        private float _lastDespawnCheck;
         private Camera _camera;
 
         // 0 = 게임 시작, 1 = 최대 난이도
@@ -95,6 +105,8 @@ namespace DungeonMaster.Spawn
 
         private void Update()
         {
+            DespawnCheck();
+
             if (Time.time < _lastSpawnTime + CurrentInterval) return;
             _lastSpawnTime = Time.time;
 
@@ -114,6 +126,35 @@ namespace DungeonMaster.Spawn
             }
         }
         #endregion
+
+        // 너무 멀리 뒤처진 적을 창고로 되돌린다.
+        // 죽인 것이 아니므로 코인도 안 떨어지고 처치 수에도 안 들어간다.
+        // 스폰은 화면 바로 바깥에서 일어나므로, 회수 거리는 그보다 넉넉히 잡아야
+        // "스폰되자마자 회수되는" 낭비가 생기지 않는다
+        private void DespawnCheck()
+        {
+            if (_despawnDistanceMul <= 0f || _player == null || _camera == null) return;
+            if (Time.time < _lastDespawnCheck + _despawnCheckInterval) return;
+            _lastDespawnCheck = Time.time;
+
+            float halfHeight = _camera.orthographicSize;
+            float halfWidth = halfHeight * _camera.aspect;
+            float ringRadius = Mathf.Sqrt(halfWidth * halfWidth + halfHeight * halfHeight) + _ringPadding;
+            float limit = ringRadius * _despawnDistanceMul;
+            float sqrLimit = limit * limit;
+
+            Vector3 center = _player.position;
+
+            for (int i = _alive.Count - 1; i >= 0; i--)
+            {
+                GameObject enemy = _alive[i];
+                if (enemy == null || !enemy.activeSelf) continue;
+                if ((enemy.transform.position - center).sqrMagnitude < sqrLimit) continue;
+
+                var re = enemy.GetComponent<DungeonMaster.Character.Enemy.RoguelikeEnemy>();
+                if (re != null) re.DespawnFarAway();
+            }
+        }
 
         #region 스폰 위치
         // 카메라가 비추는 영역을 감싸는 원 위에서 뽑는다.

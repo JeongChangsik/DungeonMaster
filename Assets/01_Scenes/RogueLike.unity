@@ -208,21 +208,23 @@ MonoBehaviour:
   - prefab: {fileID: 759937814277800801, guid: f3e31783c4f9f3b4fbf9876519565c07, type: 3}
     initialSize: 80
   - prefab: {fileID: 977541038206904769, guid: de2919aa45a305a478a31e1ff9410851, type: 3}
-    initialSize: 150
+    initialSize: 220
   - prefab: {fileID: 8523783784821193689, guid: 3046aea1ee0dfb1448c0f1dcd6f6f9c0, type: 3}
     initialSize: 75
   - prefab: {fileID: 6192281537767369351, guid: 74ba63d085cb0b74f9b7a12885caffb0, type: 3}
     initialSize: 75
   - prefab: {fileID: 4884402931318333515, guid: 3de703c800f253441a26d1a89cabd64c, type: 3}
-    initialSize: 50
+    initialSize: 55
   - prefab: {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
-    initialSize: 30
+    initialSize: 55
   - prefab: {fileID: 9033479527017514766, guid: 51987057e4c4b3544a4926699a5ba435, type: 3}
     initialSize: 30
   - prefab: {fileID: 3280177426039031054, guid: 55c8ab43f01b1124396650eb53b6374a, type: 3}
-    initialSize: 25
+    initialSize: 55
   - prefab: {fileID: 3938877811767649288, guid: b93413750bfca6745899d7e4319d9194, type: 3}
     initialSize: 40
+  - prefab: {fileID: 4302072234593872767, guid: 182d4fca234dc2e4096f34e47fdf87b6, type: 3}
+    initialSize: 25
 --- !u!4 &91852173
 Transform:
   m_ObjectHideFlags: 0
@@ -68213,6 +68215,9 @@ MonoBehaviour:
   - Prefab: {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
     UnlockTime: 240
     Weight: 1
+  - Prefab: {fileID: 4302072234593872767, guid: 182d4fca234dc2e4096f34e47fdf87b6, type: 3}
+    UnlockTime: 300
+    Weight: 0.4
   _player: {fileID: 285568322}
   _ringPadding: 1.5
   _minDistanceFromPlayer: 8
@@ -68247,6 +68252,8 @@ MonoBehaviour:
   _countPerSpawnEnd: 4
   _maxAliveStart: 30
   _maxAliveEnd: 160
+  _despawnDistanceMul: 2.2
+  _despawnCheckInterval: 1
   _hpScaleEnd: 4
   _damageScaleEnd: 1.6
 --- !u!4 &1763315195

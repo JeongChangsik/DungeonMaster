@@ -24,6 +24,10 @@ public class EnemySO : ScriptableObject
     [Header("행동 유형 (뱀서라이크 전용)")]
     public EnemyBehavior behavior = EnemyBehavior.Chase;
 
+    [Header("보상 (뱀서라이크 전용)")]
+    [Tooltip("죽을 때 떨구는 경험치 코인 개수. 강한 적일수록 크게")]
+    [Min(1)] public int coinDrop = 1;
+
     [Header("피격 반응 (뱀서라이크 전용)")]
     [Tooltip("맞았을 때 밀려나는 것에 대한 저항. 0이면 그대로 밀리고, 1이면 꿈쩍도 안 한다")]
     [Range(0f, 1f)] public float knockbackResist = 0f;

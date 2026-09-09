@@ -389,6 +389,17 @@ namespace DungeonMaster.Character.Enemy
         }
         #endregion
 
+        // 스포너가 "너무 멀리 뒤처졌다"고 판단했을 때 호출한다.
+        // 죽은 것이 아니므로 코인도 안 떨구고 처치 수도 안 센다. 조용히 창고로 돌아간다.
+        // 씬에 직접 배치된 적은 창고가 모르는 개체라 손대지 않는다
+        public void DespawnFarAway()
+        {
+            if (_isDead || !_fromPool) return;
+            if (ObjectPool.Instance == null) return;
+
+            ObjectPool.Instance.Release(gameObject);
+        }
+
         // 스포너가 Instantiate 직후에 호출한다.
         // 이 시점엔 Awake 가 이미 끝나 _currHp 가 세팅되어 있으므로 다시 계산해 준다.
         public void ApplyDifficultyScale(float hpScale, float damageScale)
@@ -584,14 +595,22 @@ namespace DungeonMaster.Character.Enemy
             // 부모를 지정하지 않는 것이 중요함
             // Instantiate(_dropCoin, transform)처럼 자신을 부모로 주면
             // 바로 아래 Destroy(gameObject)에서 코인까지 같이 사라짐
-            // 적이 뭉쳐서 죽으면 코인이 완전히 겹쳐 한 개처럼 보인다. 조금씩 흩뿌린다
-            Vector3 offset = _coinScatterRadius > 0f
-                ? (Vector3)(Random.insideUnitCircle * _coinScatterRadius)
-                : Vector3.zero;
-            Vector3 spot = transform.position + offset;
+            // 강한 적일수록 여러 개를 떨군다. 강적을 노릴 이유를 만든다
+            int count = Mathf.Max(1, _enemySO.coinDrop);
 
-            if (ObjectPool.Instance != null) ObjectPool.Instance.Spawn(_dropCoin, spot);
-            else Instantiate(_dropCoin, spot, Quaternion.identity);
+            for (int i = 0; i < count; i++)
+            {
+                // 적이 뭉쳐서 죽으면 코인이 완전히 겹쳐 한 개처럼 보인다. 조금씩 흩뿌린다.
+                // 여러 개를 떨굴 때는 반경을 조금 넓혀야 뭉쳐 보이지 않는다
+                float radius = _coinScatterRadius * (count > 1 ? 2f : 1f);
+                Vector3 offset = radius > 0f
+                    ? (Vector3)(Random.insideUnitCircle * radius)
+                    : Vector3.zero;
+                Vector3 spot = transform.position + offset;
+
+                if (ObjectPool.Instance != null) ObjectPool.Instance.Spawn(_dropCoin, spot);
+                else Instantiate(_dropCoin, spot, Quaternion.identity);
+            }
         }
     }
 }
