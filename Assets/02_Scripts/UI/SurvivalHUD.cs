@@ -23,6 +23,16 @@ namespace DungeonMaster.UI
 
         private float _startTime;
 
+        // 결과 화면이 읽어간다
+        public float ElapsedSeconds { get { return Time.time - _startTime; } }
+
+        // 00:00 형식으로. 결과 화면과 HUD 가 같은 규칙을 쓰도록 여기 모아둔다
+        public static string FormatTime(float seconds)
+        {
+            int total = Mathf.Max(0, Mathf.FloorToInt(seconds));
+            return (total / 60).ToString("00") + ":" + (total % 60).ToString("00");
+        }
+
         // 마지막으로 화면에 쓴 값. 매 프레임 문자열을 새로 만들면 GC 가 계속 쌓인다
         private int _shownSeconds = -1;
         private int _shownKills = -1;
@@ -51,11 +61,11 @@ namespace DungeonMaster.UI
         {
             if (_timeText == null) return;
 
-            int total = Mathf.FloorToInt(Time.time - _startTime);
+            int total = Mathf.FloorToInt(ElapsedSeconds);
             if (total == _shownSeconds) return;     // 초가 바뀔 때만 다시 쓴다
             _shownSeconds = total;
 
-            _timeText.text = (total / 60).ToString("00") + ":" + (total % 60).ToString("00");
+            _timeText.text = FormatTime(total);
         }
 
         private void UpdateStats()

@@ -108,6 +108,23 @@ public class ObjectPool : Singleton<ObjectPool>
 
         _pools[prefab].Enqueue(instance);
     }
+
+    // 화면에 나와 있는 것을 전부 창고로 되돌린다.
+    //
+    // 이 창고는 DontDestroyOnLoad 라서 씬을 다시 불러와도 살아남는다.
+    // 정리하지 않고 재시작하면 죽기 직전의 적과 코인이 새 판에 그대로 남아 있게 된다.
+    public void ReleaseAllActive()
+    {
+        foreach (KeyValuePair<GameObject, GameObject> pair in _instanceToPrefab)
+        {
+            GameObject instance = pair.Key;
+            if (instance == null || !instance.activeSelf) continue;
+
+            instance.GetComponent<IPoolable>()?.OnReturnToPool();
+            instance.SetActive(false);
+            _pools[pair.Value].Enqueue(instance);
+        }
+    }
     #endregion
 
     #region 내부 메서드

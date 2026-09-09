@@ -27,4 +27,5 @@ public class AudioDataSO : ScriptableObject
     public AudioClip playerHurtSFX;     // 플레이어 피격
     public AudioClip enemyChargeSFX;    // 돌진형 적이 기를 모을 때 (피할 타이밍을 소리로 알림)
     public AudioClip bombExplodeSFX;    // 폭탄이 터질 때
+    public AudioClip playerDeathSFX;    // 플레이어 사망
 }

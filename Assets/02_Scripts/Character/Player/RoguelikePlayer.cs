@@ -74,9 +74,21 @@ namespace DungeonMaster.Character.Player
         [Tooltip("맞는 순간 화면이 잠깐 멎는 시간(히트스톱). 0이면 멎지 않는다")]
         [SerializeField] private float _hitStopDuration = 0.05f;
 
+        [Header("사망 연출")]
+        [Tooltip("옆으로 쓰러지며 붉게 물드는 시간")]
+        [SerializeField] private float _deathFallDuration = 0.6f;
+        [Tooltip("쓰러진 뒤의 색")]
+        [SerializeField] private Color _deathColor = new Color(0.7f, 0.15f, 0.15f, 1f);
+
         private float _lastHitTime = -999f;
         private Coroutine _flickerRoutine;
         private Coroutine _hitStopRoutine;
+
+        // 죽는 처리가 두 번 돌지 않도록
+        private bool _deathHandled;
+
+        // 쓰러지는 연출이 끝나면 결과 화면(GameOverUI)에 알린다
+        public event Action OnDied;
 
         public bool IsInvincible => Time.time < _lastHitTime + _invincibleDuration;
         #endregion
@@ -172,6 +184,65 @@ namespace DungeonMaster.Character.Player
             float ratio = MaxHp > 0f ? damage / (MaxHp * 0.1f) : 1f;
             CameraShake.Instance.Shake(_hitShakeForce * Mathf.Clamp(ratio, 0.5f, 2f));
         }
+
+        #region 사망
+        // 죽는 순간 세상을 통째로 멈춘다.
+        //
+        // 죽음의 무게는 '정지'에서 나온다. 적도, 무기도, 시간도 그 자리에서 멎고
+        // 주인공만 천천히 쓰러진다. 그래서 쓰러지는 연출은 전부 unscaled 로 움직인다
+        // (timeScale 이 0이라 보통 시간으로는 아무것도 움직이지 않는다).
+        protected override void Die()
+        {
+            if (_deathHandled) return;
+            _deathHandled = true;
+
+            base.Die();
+
+            Time.timeScale = 0f;
+
+            // 진행 중인 연출을 전부 멈춘다.
+            // 특히 히트스톱을 안 멈추면 0.05초 뒤에 시간을 1로 되돌려 버린다
+            if (_flickerRoutine != null) { StopCoroutine(_flickerRoutine); _flickerRoutine = null; }
+            if (_hitStopRoutine != null) { StopCoroutine(_hitStopRoutine); _hitStopRoutine = null; }
+
+            if (_spriteRenderer != null) _spriteRenderer.enabled = true;   // 깜빡이다 꺼진 채로 멈추지 않게
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+            _moveInput = Vector2.zero;
+
+            // 애니메이터를 꺼야 한다.
+            // Player@hit 클립이 스프라이트 색을 직접 제어하기 때문에,
+            // 켜둔 채로 색을 칠하면 다음 프레임에 애니메이터가 그대로 덮어쓴다.
+            // 끄면 마지막 그림에서 멈추고, 그 위에 쓰러지는 연출을 얹을 수 있다
+            if (_animator != null) _animator.enabled = false;
+
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.playerDeathSFX : null, 0f);
+
+            StartCoroutine(DeathFallCo());
+        }
+
+        private IEnumerator DeathFallCo()
+        {
+            Color from = _spriteRenderer != null ? _spriteRenderer.color : Color.white;
+            Quaternion fromRot = transform.rotation;
+            Quaternion toRot = Quaternion.Euler(0f, 0f, 90f);   // 옆으로 쓰러진다
+
+            float t = 0f;
+            while (t < _deathFallDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / _deathFallDuration);
+
+                if (_spriteRenderer != null) _spriteRenderer.color = Color.Lerp(from, _deathColor, k);
+                transform.rotation = Quaternion.Slerp(fromRot, toRot, k);
+                yield return null;
+            }
+
+            if (_spriteRenderer != null) _spriteRenderer.color = _deathColor;
+            transform.rotation = toRot;
+
+            if (OnDied != null) OnDied();
+        }
+        #endregion
 
         // 맞는 순간 화면 전체를 아주 잠깐 멈춘다. 한 대가 묵직하게 느껴진다.
         //
