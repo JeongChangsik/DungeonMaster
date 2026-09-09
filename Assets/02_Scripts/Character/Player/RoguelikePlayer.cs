@@ -24,6 +24,8 @@ namespace DungeonMaster.Character.Player
         private int _currExp = 0;
         private int _level = 1;
 
+        public int Level { get { return _level; } }
+
         // 무기 전체를 관리한다. WeaponRoot 에 붙어 있음
         public WeaponManager Weapons { get; private set; }
 
