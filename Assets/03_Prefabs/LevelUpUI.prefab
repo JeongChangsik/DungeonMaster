@@ -1217,6 +1217,12 @@ MonoBehaviour:
   _pool:
   - {fileID: 11400000, guid: 5db6a89b1b3d96d4095bf74d42febe40, type: 2}
   - {fileID: 11400000, guid: 0e7057890daf0e04c988b6bca2c4af4c, type: 2}
+  - {fileID: 11400000, guid: bb6d468b8abd95f4fb41ac4dbe152d6e, type: 2}
+  - {fileID: 11400000, guid: a4af9af63e553284fa102711a68b65fa, type: 2}
+  - {fileID: 11400000, guid: c76dfa8b49e0d964f9cc998179e017d6, type: 2}
+  - {fileID: 11400000, guid: a7f0fd5dbe3a6aa42aa2bf9a887c640a, type: 2}
+  - {fileID: 11400000, guid: b0d2f2d54538b1d4ebf7654830c1f57a, type: 2}
+  _startingUpgrades: []
 --- !u!1 &6012831025673336529
 GameObject:
   m_ObjectHideFlags: 0

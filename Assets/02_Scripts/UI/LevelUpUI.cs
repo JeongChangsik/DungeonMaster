@@ -140,7 +140,7 @@ namespace DungeonMaster.UI
             foreach (UpgradeSO upgrade in _pool)
             {
                 if (upgrade == null) continue;
-                if (GetLevel(upgrade) < upgrade.MaxLevel) _candidates.Add(upgrade);
+                if (GetLevel(upgrade) < upgrade.MaxLevel && upgrade.IsAvailable(_player)) _candidates.Add(upgrade);
             }
 
             int drawCount = Mathf.Min(count, _candidates.Count);

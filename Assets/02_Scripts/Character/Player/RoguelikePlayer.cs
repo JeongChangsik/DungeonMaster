@@ -26,6 +26,20 @@ namespace DungeonMaster.Character.Player
         // 공전 무기. 업그레이드가 이걸 통해 강화한다
         public WeaponOrbit Orbit { get; private set; }
 
+        #region 뱀서 전용 스탯
+        // 구 GamePlay 씬에는 없는 개념이라 Player.cs 를 오염시키지 않고 여기에만 둔다
+        [Header("뱀서 전용 스탯")]
+        [Tooltip("경험치 코인이 빨려오기 시작하는 거리")]
+        [SerializeField] private float _pickupRadius = 3f;
+
+        private float _bonusPickup;
+        private float _mulPickup = 1f;
+        private float _mulExpGain = 1f;
+
+        public float PickupRadius => (_pickupRadius + _bonusPickup) * _mulPickup;
+        public float ExpGainMul => _mulExpGain;
+        #endregion
+
         #region 유니티 생명주기
         protected override void Awake()
         {
@@ -91,7 +105,7 @@ namespace DungeonMaster.Character.Player
 
         public void AddExp(int exp)
         {
-            _currExp += exp;
+            _currExp += Mathf.Max(1, Mathf.RoundToInt(exp * ExpGainMul));
 
             // 여기서는 레벨업하지 않는다. 바가 다 찬 뒤에 OnExpBarFilled가 처리함
             RefreshExpBar();
@@ -126,6 +140,34 @@ namespace DungeonMaster.Character.Player
         {
             // UpdateBar01은 내부에서 Clamp01 하므로 1을 넘겨도 안전
             _expBar.UpdateBar01((float)_currExp / _maxExp);
+        }
+
+        // 레벨업 카드(PlayerStatUpgradeSO)가 호출하는 단일 진입점
+        public void ApplyStatUpgrade(PlayerStat stat, float flat, float percent)
+        {
+            switch (stat)
+            {
+                case PlayerStat.MaxHp:
+                    AddMaxHp(flat, percent);
+                    break;
+
+                case PlayerStat.MoveSpeed:
+                    AddMoveSpeed(flat, percent);
+                    break;
+
+                case PlayerStat.CooldownReduction:
+                    AddCooldownReduction(percent);
+                    break;
+
+                case PlayerStat.PickupRadius:
+                    _bonusPickup += flat;
+                    _mulPickup += percent;
+                    break;
+
+                case PlayerStat.ExpGain:
+                    _mulExpGain += percent;
+                    break;
+            }
         }
 
         // 카드 선택이 끝나면 LevelUpUI가 호출

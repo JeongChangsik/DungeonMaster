@@ -13,6 +13,11 @@ public abstract class UpgradeSO : ScriptableObject
     [Header("규칙")]
     [Min(1)] public int MaxLevel = 5;
 
+    // 지금 이 카드가 후보에 오를 수 있는가.
+    // 아직 해금되지 않은 무기의 "강화" 카드가 뽑히는 걸 막는 용도.
+    // 기본은 항상 후보에 오른다.
+    public virtual bool IsAvailable(RoguelikePlayer player) => true;
+
     // level: 이번에 적용될 레벨 (1부터)
     public abstract void Apply(RoguelikePlayer player, int level);
 }

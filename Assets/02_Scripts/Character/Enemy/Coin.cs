@@ -13,6 +13,9 @@ public class Coin : MonoBehaviour
 
     private Rigidbody2D _rb;
     private Transform _player;
+    // 자석 범위를 플레이어에게서 읽어오기 위해 컴포넌트 자체를 캐싱한다.
+    // (픽업 범위 업그레이드가 코인 하나하나를 찾아다니지 않아도 되도록)
+    private RoguelikePlayer _playerRef;
 
     // 한 번 끌려가기 시작하면 다시 멀어져도 계속 쫓아감
     // 이게 없으면 경계선 근처에서 붙었다 떨어졌다 하며 덜덜 떨림
@@ -25,7 +28,11 @@ public class Coin : MonoBehaviour
 
     private void Start()
     {
-        _player = GameObject.FindWithTag("PLAYER")?.transform;
+        GameObject go = GameObject.FindWithTag("PLAYER");
+        if (go == null) return;
+
+        _player = go.transform;
+        _playerRef = go.GetComponent<RoguelikePlayer>();
     }
 
     private void FixedUpdate()
@@ -34,7 +41,10 @@ public class Coin : MonoBehaviour
 
         if (!_isChasing)
         {
-            if ((_player.position - transform.position).sqrMagnitude > _magnetRadius * _magnetRadius) return;
+            // 플레이어가 있으면 강화된 픽업 범위를 쓰고, 없으면 인스펙터 기본값으로 폴백
+            float radius = _playerRef != null ? _playerRef.PickupRadius : _magnetRadius;
+
+            if ((_player.position - transform.position).sqrMagnitude > radius * radius) return;
             _isChasing = true;
         }
 
