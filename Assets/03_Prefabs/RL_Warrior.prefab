@@ -597,11 +597,12 @@ MonoBehaviour:
   _attackCooldown: 0.5
   _hpBar: {fileID: 0}
   _expBar: {fileID: 0}
-  _nextExp: 1.5
+  _nextExp: 1.2
   _pickupRadius: 3
   _invincibleDuration: 0.6
   _flickerInterval: 0.08
   _hitShakeForce: 0.6
+  _hitStopDuration: 0.05
   _size: {x: 1, y: 2}
   _offset: 1
   _enemyLayer:
