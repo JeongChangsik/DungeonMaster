@@ -31,7 +31,7 @@ namespace DungeonMaster.Character.Player
         {
             Debug.Log($"RoguelikePlayer::Awake()");
             // 초기 체력 설정
-            _currHp = _maxHp;
+            _currHp = MaxHp;
 
             // 컴포넌트 캐싱 (this.gameObject.GetComponent<T>())
             _rb = GetComponent<Rigidbody2D>();
@@ -67,7 +67,7 @@ namespace DungeonMaster.Character.Player
         {
             if (_isDead) return;
 
-            if (Time.time < lastAttackTime + _attackCooldown) return;
+            if (Time.time < lastAttackTime + AttackCooldown) return;
 
             lastAttackTime = Time.time;
             _animator.SetTrigger(hashAttack);

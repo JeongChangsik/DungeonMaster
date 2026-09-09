@@ -55,7 +55,7 @@ namespace DungeonMaster.Character.Player
             // 방어력 적용
             float actualDamage = Mathf.Max(1f, damage - _defense);  // 최소 1 데미지
             base.TakeDamage(actualDamage);
-            Debug.Log($"Warrior가 {actualDamage}의 피해를 입었습니다 (HP: {_currHp} / {_maxHp})");
+            Debug.Log($"Warrior가 {actualDamage}의 피해를 입었습니다 (HP: {_currHp} / {MaxHp})");
         }
 
         // 애니메이션 이벤트에서 호출할 메서드
@@ -74,7 +74,7 @@ namespace DungeonMaster.Character.Player
 
             foreach (var collider in colliders)
             {
-                collider.GetComponent<IDamagable>()?.TakeDamage(_warriorSO.attackDamage);
+                collider.GetComponent<IDamagable>()?.TakeDamage(AttackDamage);
             }
         }
         #endregion
