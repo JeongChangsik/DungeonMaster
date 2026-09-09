@@ -8,6 +8,7 @@ public enum EnemyBehavior
     Chase,      // 직진 추격 (기본)
     Charger,    // 거리를 좁히면 잠깐 멈췄다가 돌진
     Ranged,     // 거리를 유지하며 원거리 공격
+    Bomber,     // 달라붙으면 잠깐 멎었다가 자폭
 }
 
 [CreateAssetMenu(fileName = "EnemySO", menuName = "DungeonMaster/EnemySO", order = 0)]
@@ -46,6 +47,16 @@ public class EnemySO : ScriptableObject
     public float chargeDuration = 0.45f;
     [Tooltip("돌진 후 다음 돌진까지 대기")]
     public float chargeCooldown = 2.5f;
+
+    [Header("자폭형 설정")]
+    [Tooltip("이 거리 안에 들어오면 자폭 준비를 시작한다")]
+    public float bombTriggerDistance = 1.6f;
+    [Tooltip("자폭 직전에 멎어서 부풀어오르는 시간. 플레이어가 도망칠 여유")]
+    public float bombFuse = 0.7f;
+    [Tooltip("폭발 반경. 이 안에 있으면 맞는다")]
+    public float bombRadius = 2f;
+    [Tooltip("폭발 피해. 접촉 피해와 별개다")]
+    public float bombDamage = 35f;
 
     [Header("원거리형 설정")]
     [Tooltip("이 거리를 유지하려 한다. 가까우면 물러난다")]

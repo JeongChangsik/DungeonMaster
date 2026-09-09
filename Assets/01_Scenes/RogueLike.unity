@@ -173,6 +173,8 @@ MonoBehaviour:
     initialSize: 25
   - prefab: {fileID: 3179388262537816183, guid: 782e6df762eda5f4ea9d65d94204a5b7, type: 3}
     initialSize: 20
+  - prefab: {fileID: 659722914064619936, guid: 78b189ca89f4a884e95e4bf7c6dd4f8e, type: 3}
+    initialSize: 45
 --- !u!4 &91852173
 Transform:
   m_ObjectHideFlags: 0
@@ -67937,6 +67939,9 @@ MonoBehaviour:
   - Prefab: {fileID: 4302072234593872767, guid: 182d4fca234dc2e4096f34e47fdf87b6, type: 3}
     UnlockTime: 300
     Weight: 0.4
+  - Prefab: {fileID: 659722914064619936, guid: 78b189ca89f4a884e95e4bf7c6dd4f8e, type: 3}
+    UnlockTime: 150
+    Weight: 1.5
   _player: {fileID: 285568322}
   _ringPadding: 1.5
   _minDistanceFromPlayer: 8

@@ -89,6 +89,8 @@ namespace DungeonMaster.Character.Enemy
         private bool _isCharging;           // 돌진 중
         private Vector2 _chargeDir;
         private float _nextShootTime;
+        private bool _isFusing;             // 자폭 준비 중(부풀어오르는 중)
+        private float _fuseEnd;
 
         // 넉백. 이 시각까지는 스스로 움직이지 않고 밀려나는 속도를 유지한다
         private float _knockbackEnd;
@@ -174,12 +176,13 @@ namespace DungeonMaster.Character.Enemy
             {
                 case EnemyBehavior.Charger: TickCharger(); break;
                 case EnemyBehavior.Ranged:  TickRanged();  break;
+                case EnemyBehavior.Bomber:  TickBomber();  break;
                 default:                    TickChase();   break;
             }
 
-            // 돌진 중에는 건드리지 않는다. 이미 방향을 확정하고 달려드는 중이라
-            // 여기서 밀면 준비 동작을 보고 피하는 재미가 사라진다
-            if (!_isCharging) ApplySeparation();
+            // 돌진 중이거나 자폭 준비 중에는 건드리지 않는다.
+            // 여기서 밀면 "멎어서 부풀어오른다"는 신호가 흐트러져서 피할 타이밍을 못 읽는다
+            if (!_isCharging && !_isFusing) ApplySeparation();
         }
 
         #region 적끼리 밀어내기
@@ -341,6 +344,63 @@ namespace DungeonMaster.Character.Enemy
             _nextShootTime = Time.time + _enemySO.shootInterval;
 
             Shoot(dir);
+        }
+
+        // 자폭형: 달라붙으면 그 자리에 멎어서 부풀어올랐다가 터진다.
+        //
+        // 핵심은 "터지기 전에 멎는다"는 것이다. 그 순간이 도망칠 기회이자,
+        // 그 전에 죽이면 폭발을 아예 막을 수 있다는 뜻이기도 하다.
+        // (죽어도 터지지 않는다. 죽였는데 피해를 입으면 억울하기만 하다)
+        private void TickBomber()
+        {
+            if (_isFusing)
+            {
+                _rb.linearVelocity = Vector2.zero;
+
+                // 부풀어오르는 연출. 멎어 있는 것만으로는 눈에 안 띈다
+                float t = Mathf.InverseLerp(_fuseEnd - _enemySO.bombFuse, _fuseEnd, Time.time);
+                transform.localScale = _baseScale * (1f + 0.35f * t);
+                if (_spriteRenderer != null)
+                    _spriteRenderer.color = Color.Lerp(_baseColor, new Color(1f, 0.5f, 0.2f, 1f), t);
+
+                if (Time.time < _fuseEnd) return;
+
+                Detonate();
+                return;
+            }
+
+            Vector2 dir = DirectionToTarget;
+            FaceTarget(dir);
+            _rb.linearVelocity = dir * _enemySO.moveSpeed;
+
+            float sqr = ((Vector2)_target.position - _rb.position).sqrMagnitude;
+            if (sqr > _enemySO.bombTriggerDistance * _enemySO.bombTriggerDistance) return;
+
+            _isFusing = true;
+            _fuseEnd = Time.time + _enemySO.bombFuse;
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.25f);
+        }
+
+        private void Detonate()
+        {
+            _isFusing = false;
+
+            // 폭발 반경 안에 있을 때만 맞는다. 도망쳤으면 아무 일도 없다
+            if (_target != null)
+            {
+                float dist = Vector2.Distance(_rb.position, (Vector2)_target.position);
+                if (dist <= _enemySO.bombRadius)
+                {
+                    IDamagable player = _target.GetComponent<IDamagable>();
+                    if (player != null) player.TakeDamage(_enemySO.bombDamage * _damageScale);
+                }
+            }
+
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.bombExplodeSFX : null, 0.2f);
+
+            // 자기 자신도 사라진다. 죽은 것으로 처리하므로 코인은 떨군다
+            _currHp = 0f;
+            Die();
         }
 
         private void Shoot(Vector2 dir)
@@ -556,6 +616,8 @@ namespace DungeonMaster.Character.Enemy
             _chargeStateEnd = 0f;
             _nextShootTime = 0f;
             _knockbackEnd = 0f;
+            _isFusing = false;
+            _fuseEnd = 0f;
             _separation = Vector2.zero;
             _nextSeparationTime = 0f;
 
