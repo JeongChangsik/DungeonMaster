@@ -31,7 +31,5 @@ public class CameraShake : Singleton<CameraShake>
         var velocity = new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f));
         velocity = velocity * force;
         _impulseSource.GenerateImpulse(velocity);
-
-        Debug.Log($"화면흔들림 : {velocity}");
     }
 }

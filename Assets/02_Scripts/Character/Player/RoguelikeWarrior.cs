@@ -44,10 +44,10 @@ namespace DungeonMaster.Character.Player
         #endregion
 
         #region 공격 및 피격 처리
+        // 로그라이크 씬의 공격은 전부 WeaponRoot 아래 무기들이 알아서 한다.
+        // 이 메서드는 부모의 자동 공격 타이머가 부르는 자리라 비워 둔다
         protected override void Attack()
         {
-            // Don't use
-            Debug.Log("공격 실행");
         }
 
         public override void TakeDamage(float damage)
@@ -55,7 +55,6 @@ namespace DungeonMaster.Character.Player
             // 방어력 적용
             float actualDamage = Mathf.Max(1f, damage - _defense);  // 최소 1 데미지
             base.TakeDamage(actualDamage);
-            Debug.Log($"Warrior가 {actualDamage}의 피해를 입었습니다 (HP: {_currHp} / {MaxHp})");
         }
 
         // 애니메이션 이벤트에서 호출할 메서드
@@ -79,13 +78,10 @@ namespace DungeonMaster.Character.Player
         }
         #endregion
 
-        private void OnTriggerEnter2D(Collider2D other)
-        {
-            if(other.CompareTag("Enemy"))
-            {
-                CameraShake.Instance.Shake();
-            }
-        }
+        // OnTriggerEnter2D 로 "적과 닿을 때" 화면을 흔들던 코드를 없앴다.
+        // 뱀서라이크는 적 수십 마리가 항상 몸에 붙어 있어서 화면이 쉬지 않고 흔들렸고,
+        // 무적 시간이라 피해를 안 입은 순간에도, 심지어 죽은 뒤에도 흔들렸다.
+        // 지금은 RoguelikePlayer.TakeDamage 에서 실제로 체력이 깎일 때만 흔든다.
 
     }
 }

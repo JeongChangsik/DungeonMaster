@@ -67,6 +67,8 @@ namespace DungeonMaster.Character.Player
         [SerializeField] private float _invincibleDuration = 0.6f;
         [Tooltip("무적 동안 깜빡이는 간격")]
         [SerializeField] private float _flickerInterval = 0.08f;
+        [Tooltip("맞았을 때 화면이 흔들리는 세기. 0이면 흔들리지 않는다")]
+        [SerializeField] private float _hitShakeForce = 0.6f;
 
         private float _lastHitTime = -999f;
         private Coroutine _flickerRoutine;
@@ -147,9 +149,22 @@ namespace DungeonMaster.Character.Player
 
             _lastHitTime = Time.time;
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.playerHurtSFX : null);
+            ShakeOnHit(damage);
             base.TakeDamage(damage);
 
             if (!_isDead) StartFlicker();
+        }
+
+        // 화면 흔들림은 "실제로 체력이 깎였을 때"만 일어나야 한다.
+        // 적과 닿기만 해도 흔들면 적 수십 마리가 몰린 순간 화면이 계속 요동쳐서
+        // 정작 진짜 피격을 구분할 수 없게 된다.
+        private void ShakeOnHit(float damage)
+        {
+            if (_hitShakeForce <= 0f) return;
+
+            // 큰 피해일수록 크게 흔든다. 최대 체력의 10%를 맞았을 때가 기준 세기
+            float ratio = MaxHp > 0f ? damage / (MaxHp * 0.1f) : 1f;
+            CameraShake.Instance.Shake(_hitShakeForce * Mathf.Clamp(ratio, 0.5f, 2f));
         }
 
         // 무적인 동안 스프라이트를 깜빡여 상태를 눈에 보이게 한다
