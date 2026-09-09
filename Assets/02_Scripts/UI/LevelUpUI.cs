@@ -77,6 +77,8 @@ namespace DungeonMaster.UI
             upgrade.Apply(_player, level);
 
             Debug.Log($"업그레이드 적용: {upgrade.Title} Lv.{level}");
+
+            if (OnUpgradesChanged != null) OnUpgradesChanged();
         }
 
         private void HandleLevelUp(int level)
@@ -129,6 +131,24 @@ namespace DungeonMaster.UI
         // 아직 한 번도 안 고른 업그레이드는 0레벨
         private int GetLevel(UpgradeSO upgrade)
             => _levels.TryGetValue(upgrade, out int level) ? level : 0;
+
+        // 지금까지 고른 업그레이드가 바뀔 때마다 알린다. BuildHUD 가 듣는다
+        public event System.Action OnUpgradesChanged;
+
+        // 지금까지 고른 업그레이드를 순서대로 채워 준다.
+        // 딕셔너리를 그대로 넘기면 밖에서 고칠 수 있으므로 복사해서 준다.
+        // 리스트를 받아서 채우는 이유는 매번 새로 만들지 않기 위함이다
+        public void CopyAcquired(List<UpgradeSO> outUpgrades, List<int> outLevels)
+        {
+            outUpgrades.Clear();
+            outLevels.Clear();
+
+            foreach (KeyValuePair<UpgradeSO, int> pair in _levels)
+            {
+                outUpgrades.Add(pair.Key);
+                outLevels.Add(pair.Value);
+            }
+        }
 
         // 만렙이 아닌 것들 중에서 중복 없이 count개.
         // 앞에서부터 무작위 원소와 자리를 바꿔가는 방식(Fisher-Yates)이라 중복이 구조적으로 불가능하다
