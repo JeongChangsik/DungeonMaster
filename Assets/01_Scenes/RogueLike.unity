@@ -150,17 +150,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPool
   _configs:
   - prefab: {fileID: 759937814277800801, guid: f3e31783c4f9f3b4fbf9876519565c07, type: 3}
-    initialSize: 60
+    initialSize: 80
   - prefab: {fileID: 977541038206904769, guid: de2919aa45a305a478a31e1ff9410851, type: 3}
-    initialSize: 120
+    initialSize: 150
   - prefab: {fileID: 8523783784821193689, guid: 3046aea1ee0dfb1448c0f1dcd6f6f9c0, type: 3}
-    initialSize: 60
+    initialSize: 75
   - prefab: {fileID: 6192281537767369351, guid: 74ba63d085cb0b74f9b7a12885caffb0, type: 3}
-    initialSize: 40
+    initialSize: 75
   - prefab: {fileID: 4884402931318333515, guid: 3de703c800f253441a26d1a89cabd64c, type: 3}
-    initialSize: 30
+    initialSize: 50
   - prefab: {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
-    initialSize: 20
+    initialSize: 30
 --- !u!4 &91852173
 Transform:
   m_ObjectHideFlags: 0
