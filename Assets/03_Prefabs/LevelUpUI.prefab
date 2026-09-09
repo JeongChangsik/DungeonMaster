@@ -1240,6 +1240,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 705381da8b368a74dada44300d96f0c2, type: 2}
   - {fileID: 11400000, guid: cf22ae03aa9b56c4eb1a38eeef40d4a8, type: 2}
   - {fileID: 11400000, guid: bb46c90126680e94fbe3b7822c52f2e3, type: 2}
+  - {fileID: 11400000, guid: 4042459a18e1f144997d59612c3a40fb, type: 2}
+  - {fileID: 11400000, guid: 1f3d5fd4d453bbc4192a13c03c05f22e, type: 2}
+  - {fileID: 11400000, guid: 2ab1e4927b1c70441acfe39b35f6e8d2, type: 2}
+  - {fileID: 11400000, guid: 173f2ece4b65c944e81e826528e26386, type: 2}
   _startingUpgrades:
   - {fileID: 11400000, guid: 5db6a89b1b3d96d4095bf74d42febe40, type: 2}
 --- !u!1 &6012831025673336529

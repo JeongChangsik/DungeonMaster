@@ -26,3 +26,4 @@ MonoBehaviour:
   weaponThrowSFX: {fileID: 8300000, guid: 5373f44f725a8e141adacf2af225d583, type: 3}
   playerHurtSFX: {fileID: 8300000, guid: fe42e407d63a716428457f99cf581dac, type: 3}
   enemyChargeSFX: {fileID: 8300000, guid: cc1c4aa01bdd2cc43898b84e71654f62, type: 3}
+  bombExplodeSFX: {fileID: 8300000, guid: 892ece128b8df4141b7b7567133002a0, type: 3}

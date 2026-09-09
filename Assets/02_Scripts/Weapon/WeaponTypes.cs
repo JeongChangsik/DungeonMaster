@@ -9,6 +9,7 @@ namespace DungeonMaster.Weapon
         Projectile,     // 투척 단검
         Aura,           // 화염 오라
         Boomerang,      // 부메랑 도끼
+        Bomb,           // 폭탄
     }
 
     // 무기의 어떤 값을 올릴 것인가.
