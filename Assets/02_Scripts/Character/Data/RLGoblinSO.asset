@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f059f20a8d4942c99034712a8dabbd91, type: 3}
-  m_Name: RLSwampySO
+  m_Name: RLGoblinSO
   m_EditorClassIdentifier: Assembly-CSharp::EnemySO
-  maxHp: 30
-  moveSpeed: 2.5
+  maxHp: 15
+  moveSpeed: 4
   chaseDistance: 5
-  attackDistance: 2
-  attackDamage: 16
-  attackCooldown: 1
+  attackDistance: 1
+  attackDamage: 14
+  attackCooldown: 0.8

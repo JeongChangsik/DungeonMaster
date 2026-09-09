@@ -67495,6 +67495,9 @@ MonoBehaviour:
   _wallTilemap: {fileID: 977116619}
   _enemyPrefabs:
   - {fileID: 8523783784821193689, guid: 3046aea1ee0dfb1448c0f1dcd6f6f9c0, type: 3}
+  - {fileID: 6192281537767369351, guid: 74ba63d085cb0b74f9b7a12885caffb0, type: 3}
+  - {fileID: 4884402931318333515, guid: 3de703c800f253441a26d1a89cabd64c, type: 3}
+  - {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
   _player: {fileID: 285568322}
   _interval: 1
   _countPerSpawn: 1
