@@ -130,6 +130,7 @@ namespace DungeonMaster.Character.Enemy
             ShowDamageNumber(damage);
             Flash();
             UpdateHealthBar();
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyHitSFX : null);
 
             if (_currHp > 0f)
             {
@@ -192,6 +193,7 @@ namespace DungeonMaster.Character.Enemy
             _isDead = true;
             _currHp = 0f;
 
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null);
             DropCoin();
 
             // 사망 애니메이션이 없으므로 바로 제거

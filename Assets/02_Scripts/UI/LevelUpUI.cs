@@ -181,6 +181,7 @@ namespace DungeonMaster.UI
 
         private void OnCardSelected(int index)
         {
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.cardSelectSFX : null, 0f);
             if (index < _drawn.Count) LevelUpUpgrade(_drawn[index]);
             ShowNext();   // 대기 중인 레벨업이 남아 있으면 이어서, 없으면 Close()
         }

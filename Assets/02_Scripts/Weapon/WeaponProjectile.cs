@@ -69,6 +69,8 @@ namespace DungeonMaster.Weapon
             float damage = Damage;
             int pierce = Pierce;
 
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.weaponThrowSFX : null, 0.12f);
+
             // 여러 발이면 부채꼴로 벌린다. 3발이면 -spread, 0, +spread
             float start = -(count - 1) * 0.5f * _spreadAngle;
 

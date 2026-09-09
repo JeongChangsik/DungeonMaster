@@ -4,6 +4,7 @@ using DungeonMaster.Core;
 using Unity.Cinemachine;
 using UnityEngine.UI;
 using System;
+using System.Collections;
 using MoreMountains.Tools;
 using DungeonMaster.Weapon;
 
@@ -50,6 +51,21 @@ namespace DungeonMaster.Character.Player
         public float WeaponDamageMul => _mulWeaponDamage;
         public float WeaponAreaMul => _mulWeaponArea;
         public float WeaponRateMul => _mulWeaponRate;
+        #endregion
+
+        #region 무적 시간
+        // 적이 겹치면 각자 자기 쿨타임으로 동시에 때려서 순식간에 죽는다.
+        // 한 번 맞으면 짧게 무적이 되도록 한다.
+        // Player.cs 가 아니라 여기에 두는 이유: 구 GamePlay 씬의 난이도를 바꾸지 않기 위함.
+        [Header("무적 시간")]
+        [SerializeField] private float _invincibleDuration = 0.6f;
+        [Tooltip("무적 동안 깜빡이는 간격")]
+        [SerializeField] private float _flickerInterval = 0.08f;
+
+        private float _lastHitTime = -999f;
+        private Coroutine _flickerRoutine;
+
+        public bool IsInvincible => Time.time < _lastHitTime + _invincibleDuration;
         #endregion
 
         #region 유니티 생명주기
@@ -114,6 +130,38 @@ namespace DungeonMaster.Character.Player
                 // 왼쪽
                 _spriteRenderer.flipX = true;
             }
+        }
+
+        public override void TakeDamage(float damage)
+        {
+            if (_isDead) return;
+            if (IsInvincible) return;      // 겹친 적들에게 동시에 맞아 즉사하는 것을 막는다
+
+            _lastHitTime = Time.time;
+            AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.playerHurtSFX : null);
+            base.TakeDamage(damage);
+
+            if (!_isDead) StartFlicker();
+        }
+
+        // 무적인 동안 스프라이트를 깜빡여 상태를 눈에 보이게 한다
+        private void StartFlicker()
+        {
+            if (_flickerRoutine != null) StopCoroutine(_flickerRoutine);
+            _flickerRoutine = StartCoroutine(FlickerCo());
+        }
+
+        private IEnumerator FlickerCo()
+        {
+            while (IsInvincible)
+            {
+                _spriteRenderer.enabled = !_spriteRenderer.enabled;
+                yield return new WaitForSeconds(_flickerInterval);
+            }
+
+            // 깜빡임이 꺼진 채로 끝나지 않도록 반드시 되돌린다
+            _spriteRenderer.enabled = true;
+            _flickerRoutine = null;
         }
 
         public void AddExp(int exp)

@@ -73,6 +73,7 @@ public class Coin : MonoBehaviour, IPoolable
         if (!other.CompareTag("PLAYER")) return;
 
         other.GetComponent<RoguelikePlayer>()?.AddExp(_expAmount);
+        AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.coinPickupSFX : null, 0.15f);
 
         _released = true;
         if (ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);

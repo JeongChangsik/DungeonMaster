@@ -18,3 +18,10 @@ MonoBehaviour:
   playerAttackSFX: {fileID: 8300000, guid: 85cae26d493a1a743b61cd4bafe5c76f, type: 3}
   enemyAttackSFX: {fileID: 8300000, guid: 68e46709c26766c4290b833d6c35cf13, type: 3}
   itemPickupSFX: {fileID: 8300000, guid: 2bf452fadd872c7468200a90c7c953f1, type: 3}
+  enemyHitSFX: {fileID: 8300000, guid: 3c28d9a5f1d395f4e8d00b7122718a95, type: 3}
+  enemyDeathSFX: {fileID: 8300000, guid: b29bb9837ef076c45959c3b013a8b029, type: 3}
+  coinPickupSFX: {fileID: 8300000, guid: 5d2ff4d73396a964cbe473315f2fd75c, type: 3}
+  levelUpSFX: {fileID: 8300000, guid: 694f2c9074bff5d4a93c656887c7d81a, type: 3}
+  cardSelectSFX: {fileID: 8300000, guid: 5f1fa305d291d514dade0d3f439ad5ca, type: 3}
+  weaponThrowSFX: {fileID: 8300000, guid: 5373f44f725a8e141adacf2af225d583, type: 3}
+  playerHurtSFX: {fileID: 8300000, guid: fe42e407d63a716428457f99cf581dac, type: 3}
