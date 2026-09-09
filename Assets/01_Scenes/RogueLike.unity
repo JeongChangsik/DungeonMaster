@@ -66634,7 +66634,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Weapon.WeaponOrbit
   _weaponPrefab: {fileID: 4953160620267730618, guid: cdfaeb87ae58a4a41b018d836f0cefed, type: 3}
-  _count: 1
+  _count: 0
   _radius: 1.5
   _angularSpeed: -180
   _damage: 10
@@ -67940,6 +67940,14 @@ PrefabInstance:
       propertyPath: _player
       value: 
       objectReference: {fileID: 235717250468855342}
+    - target: {fileID: 7148178315246868605, guid: 9fcadb50349a81846a9d07e0472c9da4, type: 3}
+      propertyPath: _startingUpgrades.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7148178315246868605, guid: 9fcadb50349a81846a9d07e0472c9da4, type: 3}
+      propertyPath: '_startingUpgrades.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 5db6a89b1b3d96d4095bf74d42febe40, type: 2}
     - target: {fileID: 8759718016476185146, guid: 9fcadb50349a81846a9d07e0472c9da4, type: 3}
       propertyPath: m_Sprite
       value: 
