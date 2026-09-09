@@ -38,6 +38,8 @@ namespace DungeonMaster.Character.Enemy
         [SerializeField] private Color _flashColor = new Color(1f, 0.35f, 0.35f, 1f);
         [Tooltip("피격 시 데미지 숫자를 띄운다. 씬에 MMFloatingTextSpawner 가 있어야 보인다")]
         [SerializeField] private bool _showDamageNumber = true;
+        [Tooltip("데미지 숫자를 띄우는 최소 간격. 그 사이에 맞은 피해는 합쳐서 한 번에 보여준다")]
+        [SerializeField] private float _damageNumberInterval = 0.5f;
         [Tooltip("맞았을 때 뒤로 밀려나는 거리. 적별 저항은 EnemySO.knockbackResist 로 조절")]
         [SerializeField] private float _knockbackDistance = 0.35f;
         [Tooltip("밀려나는 동안 스스로 움직이지 못하는 시간")]
@@ -115,6 +117,10 @@ namespace DungeonMaster.Character.Enemy
 
         // 겹쳐 있는 동안 데미지가 매 프레임 들어가지 않도록 하는 쿨타임
         private float _lastContactTime;
+
+        // 데미지 숫자를 합쳐서 보여주기 위한 누적분
+        private float _pendingDamage;
+        private float _nextDamageNumberTime;
 
         // 타격 연출용
         private MMHealthBar _healthBar;     // 없으면 체력바를 안 그릴 뿐, 동작에는 지장 없음
@@ -440,7 +446,7 @@ namespace DungeonMaster.Character.Enemy
 
             _currHp -= damage;
 
-            ShowDamageNumber(damage);
+            AccumulateDamageNumber(damage);
             Flash();
             Knockback();
             UpdateHealthBar();
@@ -478,6 +484,36 @@ namespace DungeonMaster.Character.Enemy
         }
 
         #region 타격 연출
+        // 타격마다 숫자를 띄우면 화면이 숫자로 뒤덮인다.
+        //
+        // 실측: 최대 난이도에서 화면에 숫자가 186개까지 떴다.
+        // 그 정도면 서로 겹쳐서 아무것도 못 읽고, 숫자 오브젝트도 준비해둔 양을 넘어
+        // 게임 도중에 계속 새로 만들어진다(60개 준비 -> 261개까지 증식).
+        //
+        // 그래서 짧은 간격 동안 맞은 피해를 합쳐서 한 번에 보여준다.
+        // 숫자가 줄어들 뿐 아니라, 합계라서 한 번에 얼마나 들어갔는지가 오히려 잘 보인다.
+        private void AccumulateDamageNumber(float damage)
+        {
+            if (!_showDamageNumber) return;
+
+            _pendingDamage += damage;
+
+            if (Time.time < _nextDamageNumberTime) return;
+            _nextDamageNumberTime = Time.time + _damageNumberInterval;
+
+            FlushDamageNumber();
+        }
+
+        // 쌓아둔 피해를 지금 바로 띄운다. 죽는 순간에도 불러서 마지막 타격을 놓치지 않게 한다
+        private void FlushDamageNumber()
+        {
+            if (_pendingDamage <= 0f) return;
+
+            float amount = _pendingDamage;
+            _pendingDamage = 0f;
+            ShowDamageNumber(amount);
+        }
+
         private void ShowDamageNumber(float damage)
         {
             if (!_showDamageNumber) return;
@@ -538,6 +574,9 @@ namespace DungeonMaster.Character.Enemy
             _isDead = true;
             _currHp = 0f;
             TotalKills++;
+
+            // 마지막 타격은 반드시 보여준다. 죽인 한 방이 안 보이면 허전하다
+            FlushDamageNumber();
 
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null);
             DropCoin();
@@ -616,6 +655,8 @@ namespace DungeonMaster.Character.Enemy
             _chargeStateEnd = 0f;
             _nextShootTime = 0f;
             _knockbackEnd = 0f;
+            _pendingDamage = 0f;
+            _nextDamageNumberTime = 0f;
             _isFusing = false;
             _fuseEnd = 0f;
             _separation = Vector2.zero;
