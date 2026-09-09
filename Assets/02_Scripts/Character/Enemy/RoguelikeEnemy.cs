@@ -47,6 +47,13 @@ namespace DungeonMaster.Character.Enemy
         private float _currHp;
         private bool _isDead;
 
+        // 경과 시간에 따른 난이도 배율. 스포너가 생성 직후에 내려준다
+        private float _hpScale = 1f;
+        private float _damageScale = 1f;
+
+        public float MaxHp { get { return _enemySO.maxHp * _hpScale; } }
+        public float ContactDamage { get { return _enemySO.attackDamage * _damageScale; } }
+
         // 겹쳐 있는 동안 데미지가 매 프레임 들어가지 않도록 하는 쿨타임
         private float _lastContactTime;
 
@@ -69,7 +76,7 @@ namespace DungeonMaster.Character.Enemy
             _healthBar = GetComponent<MMHealthBar>();
             _baseColor = _spriteRenderer.color;
 
-            _currHp = _enemySO.maxHp;
+            _currHp = MaxHp;
         }
 
         private void Start()
@@ -108,7 +115,7 @@ namespace DungeonMaster.Character.Enemy
             if (Time.time < _lastContactTime + _enemySO.attackCooldown) return;
 
             _lastContactTime = Time.time;
-            other.GetComponent<IDamagable>()?.TakeDamage(_enemySO.attackDamage);
+            other.GetComponent<IDamagable>()?.TakeDamage(ContactDamage);
         }
         #endregion
 
@@ -133,6 +140,16 @@ namespace DungeonMaster.Character.Enemy
             Die();
         }
         #endregion
+
+        // 스포너가 Instantiate 직후에 호출한다.
+        // 이 시점엔 Awake 가 이미 끝나 _currHp 가 세팅되어 있으므로 다시 계산해 준다.
+        public void ApplyDifficultyScale(float hpScale, float damageScale)
+        {
+            _hpScale = Mathf.Max(0.1f, hpScale);
+            _damageScale = Mathf.Max(0.1f, damageScale);
+
+            _currHp = MaxHp;
+        }
 
         #region 타격 연출
         private void ShowDamageNumber(float damage)
@@ -166,7 +183,7 @@ namespace DungeonMaster.Character.Enemy
         private void UpdateHealthBar()
         {
             if (_healthBar == null) return;
-            _healthBar.UpdateBar(Mathf.Max(0f, _currHp), 0f, _enemySO.maxHp, true);
+            _healthBar.UpdateBar(Mathf.Max(0f, _currHp), 0f, MaxHp, true);
         }
         #endregion
 

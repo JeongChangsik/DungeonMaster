@@ -67770,16 +67770,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Spawn.EnemySpawner
   _groundTilemap: {fileID: 526407133}
   _wallTilemap: {fileID: 977116619}
-  _enemyPrefabs:
-  - {fileID: 8523783784821193689, guid: 3046aea1ee0dfb1448c0f1dcd6f6f9c0, type: 3}
-  - {fileID: 6192281537767369351, guid: 74ba63d085cb0b74f9b7a12885caffb0, type: 3}
-  - {fileID: 4884402931318333515, guid: 3de703c800f253441a26d1a89cabd64c, type: 3}
-  - {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
+  _enemies:
+  - Prefab: {fileID: 8523783784821193689, guid: 3046aea1ee0dfb1448c0f1dcd6f6f9c0, type: 3}
+    UnlockTime: 0
+    Weight: 3
+  - Prefab: {fileID: 6192281537767369351, guid: 74ba63d085cb0b74f9b7a12885caffb0, type: 3}
+    UnlockTime: 45
+    Weight: 3
+  - Prefab: {fileID: 4884402931318333515, guid: 3de703c800f253441a26d1a89cabd64c, type: 3}
+    UnlockTime: 120
+    Weight: 2
+  - Prefab: {fileID: 89409569930702095, guid: 50b8d398a220a2846af7257b744f7909, type: 3}
+    UnlockTime: 240
+    Weight: 1
   _player: {fileID: 285568322}
-  _interval: 1
-  _countPerSpawn: 1
-  _maxAlive: 50
+  _ringPadding: 1.5
   _minDistanceFromPlayer: 8
+  _rampDuration: 600
+  _rampCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _intervalStart: 1.2
+  _intervalEnd: 0.18
+  _countPerSpawnStart: 1
+  _countPerSpawnEnd: 4
+  _maxAliveStart: 30
+  _maxAliveEnd: 160
+  _hpScaleEnd: 4
+  _damageScaleEnd: 2.5
 --- !u!4 &1763315195
 Transform:
   m_ObjectHideFlags: 0
