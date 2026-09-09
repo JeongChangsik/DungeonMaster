@@ -41,6 +41,19 @@ namespace DungeonMaster.Character.Enemy
         [Tooltip("밀려나는 동안 스스로 움직이지 못하는 시간")]
         [SerializeField] private float _knockbackDuration = 0.09f;
 
+        [Header("적끼리 밀어내기")]
+        // 적 콜라이더가 전부 트리거라 물리적으로 서로를 밀어내지 못한다.
+        // 그대로 두면 수십 마리가 플레이어 좌표 한 점에 완전히 겹쳐 쌓인다.
+        [Tooltip("이 거리 안의 다른 적을 밀어낸다. 적 반지름의 약 1.2배가 적당")]
+        [SerializeField] private float _separationRadius = 1.1f;
+        [Tooltip("밀어내는 세기. 이동속도에 대한 비율. 0이면 밀어내지 않는다")]
+        [SerializeField] private float _separationWeight = 3f;
+        [Tooltip("몇 초마다 주변을 다시 살피는가. 짧을수록 정확하지만 무겁다")]
+        [SerializeField] private float _separationInterval = 0.12f;
+        [Tooltip("한 번에 고려할 이웃 수 상한. 수백 마리가 몰려도 비용이 일정하게 유지된다")]
+        [SerializeField] private int _separationMaxNeighbors = 8;
+        [SerializeField] private LayerMask _separationLayer;
+
         [Header("사망 연출")]
         [Tooltip("죽을 때 부풀었다 쪼그라들며 사라지는 시간. 0이면 즉시 사라진다")]
         [SerializeField] private float _deathPopDuration = 0.14f;
@@ -77,6 +90,21 @@ namespace DungeonMaster.Character.Enemy
 
         // 넉백. 이 시각까지는 스스로 움직이지 않고 밀려나는 속도를 유지한다
         private float _knockbackEnd;
+
+        // 밀어내기. 매 프레임 주변을 검색하면 수백 마리에서 감당이 안 되므로
+        // 간격을 두고 갱신하고, 그 사이에는 마지막 결과를 재사용한다
+        private Vector2 _separation;
+        private float _nextSeparationTime;
+
+        // 검색 결과를 담을 리스트. static 으로 공유해서 매번 새로 만들지 않는다
+        private static readonly System.Collections.Generic.List<Collider2D> _sepHits =
+            new System.Collections.Generic.List<Collider2D>(32);
+        private ContactFilter2D _sepFilter;
+        private bool _sepFilterReady;
+
+        // 이번 판에서 죽인 적의 수. SurvivalHUD 가 판을 시작할 때 0으로 되돌린다.
+        // 죽는 곳이 Die() 한 군데뿐이라 여기서 세는 것이 가장 단순하다
+        public static int TotalKills;
 
         public float MaxHp { get { return _enemySO.maxHp * _hpScale; } }
         public float ContactDamage { get { return _enemySO.attackDamage * _damageScale; } }
@@ -146,7 +174,80 @@ namespace DungeonMaster.Character.Enemy
                 case EnemyBehavior.Ranged:  TickRanged();  break;
                 default:                    TickChase();   break;
             }
+
+            // 돌진 중에는 건드리지 않는다. 이미 방향을 확정하고 달려드는 중이라
+            // 여기서 밀면 준비 동작을 보고 피하는 재미가 사라진다
+            if (!_isCharging) ApplySeparation();
         }
+
+        #region 적끼리 밀어내기
+        // 적 콜라이더는 전부 트리거라 물리 엔진이 서로 밀어내 주지 않는다.
+        // 그래서 전부 플레이어 좌표 한 점으로 수렴해 실측 거리가 0.00~0.05 였고,
+        // 그 결과 반경 1.5 를 도는 공전 칼날이 단 한 마리도 때리지 못했다.
+        // (겉보기에도 수십 마리가 한 마리처럼 보인다)
+        private void ApplySeparation()
+        {
+            if (_separationWeight <= 0f || _rb == null) return;
+
+            if (Time.time >= _nextSeparationTime)
+            {
+                // 같은 프레임에 스폰된 적들이 동시에 검색하지 않도록 간격을 흩뿌린다
+                _nextSeparationTime = Time.time + _separationInterval * Random.Range(0.85f, 1.15f);
+                _separation = ComputeSeparation();
+            }
+
+            if (_separation.sqrMagnitude < 0.0001f) return;
+
+            _rb.linearVelocity += _separation * (_enemySO.moveSpeed * _separationWeight);
+
+            // 밀어내기가 더해져도 원래 속도의 1.5배를 넘지 않게 한다
+            float max = _enemySO.moveSpeed * 1.5f;
+            if (_rb.linearVelocity.sqrMagnitude > max * max)
+                _rb.linearVelocity = _rb.linearVelocity.normalized * max;
+        }
+
+        private Vector2 ComputeSeparation()
+        {
+            if (!_sepFilterReady)
+            {
+                _sepFilter = new ContactFilter2D();
+                _sepFilterReady = true;
+            }
+            // 적 콜라이더가 트리거라서 useTriggers 를 켜지 않으면 아무것도 잡히지 않는다
+            _sepFilter.useTriggers = true;
+            _sepFilter.useLayerMask = true;
+            _sepFilter.SetLayerMask(_separationLayer);
+            _sepFilter.useDepth = false;
+
+            _sepHits.Clear();
+            Physics2D.OverlapCircle(_rb.position, _separationRadius, _sepFilter, _sepHits);
+
+            Vector2 sum = Vector2.zero;
+            int counted = 0;
+
+            for (int i = 0; i < _sepHits.Count && counted < _separationMaxNeighbors; i++)
+            {
+                Collider2D c = _sepHits[i];
+                if (c == null) continue;
+                if (c.transform == transform) continue;      // 자기 자신
+
+                Vector2 away = _rb.position - (Vector2)c.transform.position;
+                float dist = away.magnitude;
+
+                // 완전히 겹쳐 있으면 밀어낼 방향이 정해지지 않는다.
+                // 아무 방향이나 잡아줘야 서로 붙은 채로 굳지 않는다
+                if (dist < 0.001f) away = Random.insideUnitCircle.normalized;
+                else away /= dist;
+
+                // 가까울수록 세게 민다
+                sum += away * (1f - Mathf.Clamp01(dist / _separationRadius));
+                counted++;
+            }
+
+            if (counted == 0) return Vector2.zero;
+            return sum / counted;
+        }
+        #endregion
 
         #region 행동 유형
         private Vector2 DirectionToTarget
@@ -358,6 +459,7 @@ namespace DungeonMaster.Character.Enemy
         {
             _isDead = true;
             _currHp = 0f;
+            TotalKills++;
 
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyDeathSFX : null);
             DropCoin();
@@ -435,6 +537,8 @@ namespace DungeonMaster.Character.Enemy
             _chargeStateEnd = 0f;
             _nextShootTime = 0f;
             _knockbackEnd = 0f;
+            _separation = Vector2.zero;
+            _nextSeparationTime = 0f;
 
             // 사망 연출로 크기가 0까지 줄고 투명해진 채로 반납됐을 수 있다.
             // 이걸 되돌리지 않으면 다음에 "보이지 않는 적"이 스폰된다

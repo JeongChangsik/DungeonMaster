@@ -136,6 +136,17 @@ MonoBehaviour:
   _flashDuration: 0.08
   _flashColor: {r: 1, g: 0.35, b: 0.35, a: 1}
   _showDamageNumber: 1
+  _knockbackDistance: 0.35
+  _knockbackDuration: 0.09
+  _separationRadius: 1.1
+  _separationWeight: 3
+  _separationInterval: 0.12
+  _separationMaxNeighbors: 8
+  _separationLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  _deathPopDuration: 0.14
+  _coinScatterRadius: 0.25
 --- !u!50 &6965555327184277876
 Rigidbody2D:
   serializedVersion: 5
