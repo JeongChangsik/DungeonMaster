@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ebb88aa0cfe0f547be9b263cdfc89e6, type: 3}
-  m_Name: "\uACF5\uACA9 \uC18D\uB3C4 \uC99D\uAC00"
+  m_Name: "\uBC29\uC5B4\uB825 \uC99D\uAC00"
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatUpgradeSO
-  Title: "\uACF5\uACA9 \uC18D\uB3C4 UP"
-  Description: "\uBAA8\uB4E0 \uBB34\uAE30\uC758 \uACF5\uACA9 \uC18D\uB3C4\uAC00 8%
-    \uBE68\uB77C\uC9D1\uB2C8\uB2E4"
-  Image: {fileID: 21300000, guid: cb59f083d77986948bc3c0b9e3ac3eda, type: 3}
+  Title: "\uBC29\uC5B4\uB825 UP"
+  Description: "\uB9DE\uC744 \uB54C \uBC1B\uB294 \uD53C\uD574\uAC00 3 \uC904\uC5B4\uB4ED\uB2C8\uB2E4"
+  Image: {fileID: -6871600384058977472, guid: a1ece0e2d97f375439832a3cf6655295, type: 3}
   MaxLevel: 5
-  _stat: 7
-  _flat: 0
-  _percent: 0.08
+  _stat: 9
+  _flat: 3
+  _percent: 0

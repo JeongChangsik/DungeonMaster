@@ -19,6 +19,7 @@ public enum PlayerStat
     WeaponRate,         // 모든 무기 속도
 
     HealthRegen,        // 초당 체력 회복
+    Defense,            // 방어력. 맞을 때마다 피해에서 깎인다
 }
 
 [CreateAssetMenu(menuName = "DungeonMaster/Upgrade/플레이어 스탯")]

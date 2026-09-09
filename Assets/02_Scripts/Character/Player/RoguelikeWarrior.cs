@@ -24,6 +24,8 @@ namespace DungeonMaster.Character.Player
         
         [Header("전사 전용 스탯")]
         [SerializeField] private WarriorSO _warriorSO;
+        [Tooltip("방어력 상한. 이걸 안 두면 카드를 몰아서 먹었을 때 모든 피해가 1이 된다")]
+        [SerializeField] private float _maxDefense = 30f;
         private float _defense;
 
         #region 유니티 생명주기
@@ -56,6 +58,16 @@ namespace DungeonMaster.Character.Player
             float actualDamage = Mathf.Max(1f, damage - _defense);  // 최소 1 데미지
             base.TakeDamage(actualDamage);
         }
+
+        // '방어력 증가' 카드가 여기로 들어온다.
+        // 방어력은 피해에서 그냥 빼는 방식이라 무한정 올리면 모든 피해가 1이 되어버린다.
+        // 상한을 둬서 최소한의 위협은 남긴다
+        protected override void AddDefense(float amount)
+        {
+            _defense = Mathf.Min(_defense + amount, _maxDefense);
+        }
+
+        public float Defense { get { return _defense; } }
 
         // 애니메이션 이벤트에서 호출할 메서드
         public void OnAttackAnimEvent()

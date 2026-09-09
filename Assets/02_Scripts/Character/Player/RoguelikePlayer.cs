@@ -228,6 +228,9 @@ namespace DungeonMaster.Character.Player
             _expBar.UpdateBar01((float)_currExp / _maxExp);
         }
 
+        // 방어력을 가진 직업이 재정의한다. 없는 직업은 이 카드를 먹어도 아무 일도 없다
+        protected virtual void AddDefense(float amount) { }
+
         // 매 프레임 소수점 단위로 회복시키면 HP바가 계속 떨리므로
         // 1 이상 쌓였을 때만 실제로 회복시킨다
         private void TickRegen()
@@ -271,6 +274,12 @@ namespace DungeonMaster.Character.Player
 
                 case PlayerStat.HealthRegen:
                     _regenPerSecond += flat;
+                    break;
+
+                // 방어력은 직업마다 있을 수도, 없을 수도 있다.
+                // 전사만 _defense 를 들고 있으므로 하위 클래스에 맡긴다
+                case PlayerStat.Defense:
+                    AddDefense(flat);
                     break;
 
                 // 전역 무기 배율은 값만 바꿔선 부족하다.

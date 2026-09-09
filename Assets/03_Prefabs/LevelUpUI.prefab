@@ -1238,7 +1238,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 14321ef925e439043a3b814f1979ba56, type: 2}
   - {fileID: 11400000, guid: f33141c27dd01244d9c129f0ea9cc1f5, type: 2}
   - {fileID: 11400000, guid: 705381da8b368a74dada44300d96f0c2, type: 2}
-  _startingUpgrades: []
+  - {fileID: 11400000, guid: cf22ae03aa9b56c4eb1a38eeef40d4a8, type: 2}
+  - {fileID: 11400000, guid: bb46c90126680e94fbe3b7822c52f2e3, type: 2}
+  _startingUpgrades:
+  - {fileID: 11400000, guid: 5db6a89b1b3d96d4095bf74d42febe40, type: 2}
 --- !u!1 &6012831025673336529
 GameObject:
   m_ObjectHideFlags: 0
@@ -1758,7 +1761,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1073931826172096342, guid: 25cffc2e4edd23d4996b106b5a8bc13f, type: 3}
+  m_Sprite: {fileID: -5660323637893070128, guid: 25cffc2e4edd23d4996b106b5a8bc13f, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1

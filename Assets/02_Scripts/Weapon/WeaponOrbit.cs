@@ -27,6 +27,10 @@ namespace DungeonMaster.Weapon
         //   칼날이 아래(-Y)를 향해 그려짐   ->  90
         [SerializeField] private float _angleOffset = 0f;
 
+        // 프리팹 원본 크기. 궤도가 커질 때 이 값을 기준으로 비례해서 키운다
+        private Vector3 _baseWeaponScale = Vector3.one;
+        private bool _baseScaleCached;
+
         // 강화 누적분
         private int _addCount;
         private float _addRadius;
@@ -68,6 +72,12 @@ namespace DungeonMaster.Weapon
                 return;
             }
 
+            if (!_baseScaleCached)
+            {
+                _baseWeaponScale = _weaponPrefab.transform.localScale;
+                _baseScaleCached = true;
+            }
+
             ClearWeapons();
 
             int count = EffectiveCount;
@@ -89,6 +99,14 @@ namespace DungeonMaster.Weapon
                 weapon.transform.localPosition = rot * Vector3.up * radius;
                 // 배치 각도 + 스프라이트 보정 -> 칼날이 바깥을 향하게 됨
                 weapon.transform.localRotation = Quaternion.Euler(0f, 0f, angle + _angleOffset);
+
+                // 궤도가 커지면 칼날도 같이 커진다.
+                //
+                // 이게 없으면 '궤도 확장'이나 '무기 범위 UP' 카드가 오히려 손해가 된다.
+                // 칼날이 훑는 구간은 (반경 ± 칼날 길이의 절반) 인데, 반경만 커지면
+                // 그 구간이 통째로 바깥으로 밀려나서 플레이어에게 붙어 있는 적을 아예 못 때린다.
+                // 크기까지 같이 키우면 훑는 구간이 넓어지므로 안쪽도 계속 닿는다.
+                weapon.transform.localScale = _baseWeaponScale * (radius / Mathf.Max(0.01f, _radius));
 
                 weapon.GetComponent<OrbitWeapon>()?.SetDamage(damage);
             }

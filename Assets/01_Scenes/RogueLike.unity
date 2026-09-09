@@ -68871,18 +68871,6 @@ PrefabInstance:
       propertyPath: _player
       value: 
       objectReference: {fileID: 235717250468855342}
-    - target: {fileID: 7148178315246868605, guid: 9fcadb50349a81846a9d07e0472c9da4, type: 3}
-      propertyPath: _startingUpgrades.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7148178315246868605, guid: 9fcadb50349a81846a9d07e0472c9da4, type: 3}
-      propertyPath: '_startingUpgrades.Array.data[0]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 5db6a89b1b3d96d4095bf74d42febe40, type: 2}
-    - target: {fileID: 8759718016476185146, guid: 9fcadb50349a81846a9d07e0472c9da4, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: -5660323637893070128, guid: 25cffc2e4edd23d4996b106b5a8bc13f, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
