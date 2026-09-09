@@ -113,6 +113,11 @@ namespace DungeonMaster.UI
             // 순서 주의: 반드시 패널을 먼저 켜야 한다.
             // 부모가 꺼져 있으면 자식 카드도 꺼진 것으로 취급되어 Awake가 실행되지 않고,
             // 그 상태에서 SetData를 부르면 초기화 전이라 그냥 무시된다
+            // 피격 히트스톱이 돌고 있으면 소유권을 뺏어온다.
+            // 안 그러면 0.05초 뒤에 히트스톱이 끝나면서 시간을 1로 되돌려서
+            // 카드가 떠 있는데도 게임이 계속 돌아간다
+            if (_player != null) _player.CancelHitStop();
+
             _panel.SetActive(true);
             Time.timeScale = 0f;
 

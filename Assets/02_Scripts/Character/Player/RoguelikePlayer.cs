@@ -84,6 +84,10 @@ namespace DungeonMaster.Character.Player
         private Coroutine _flickerRoutine;
         private Coroutine _hitStopRoutine;
 
+        // 지금 시간을 멈춰둔 주체가 히트스톱인지.
+        // 레벨업 카드나 사망이 시간을 넘겨받으면 false 가 되어, 히트스톱은 손을 뗀다
+        private bool _hitStopOwnsTime;
+
         // 죽는 처리가 두 번 돌지 않도록
         private bool _deathHandled;
 
@@ -203,7 +207,7 @@ namespace DungeonMaster.Character.Player
             // 진행 중인 연출을 전부 멈춘다.
             // 특히 히트스톱을 안 멈추면 0.05초 뒤에 시간을 1로 되돌려 버린다
             if (_flickerRoutine != null) { StopCoroutine(_flickerRoutine); _flickerRoutine = null; }
-            if (_hitStopRoutine != null) { StopCoroutine(_hitStopRoutine); _hitStopRoutine = null; }
+            CancelHitStop();
 
             if (_spriteRenderer != null) _spriteRenderer.enabled = true;   // 깜빡이다 꺼진 채로 멈추지 않게
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
@@ -264,14 +268,35 @@ namespace DungeonMaster.Character.Player
 
         private IEnumerator HitStopCo()
         {
+            _hitStopOwnsTime = true;
             Time.timeScale = 0f;
 
             // 시간이 멈춘 동안에도 흐르는 실제 시간으로 기다려야 한다.
             // WaitForSeconds 를 쓰면 timeScale 이 0이라 영원히 안 끝난다
             yield return new WaitForSecondsRealtime(_hitStopDuration);
 
-            // 기다리는 사이에 레벨업 카드가 떴다면 그쪽이 시간을 관리하게 둔다
-            if (Mathf.Approximately(Time.timeScale, 0f)) Time.timeScale = 1f;
+            // 기다리는 사이에 레벨업 카드나 사망 처리가 시간을 넘겨받았을 수 있다.
+            // 그때는 소유권이 없으므로 손대지 않는다.
+            //
+            // 이 검사가 없으면 이런 일이 벌어진다:
+            //   경험치 바는 UnscaledTime 이라 시간이 멈춰도 계속 차오른다
+            //   -> 히트스톱 0.05초 사이에 바가 다 차서 레벨업 카드가 뜨고
+            //   -> 곧바로 히트스톱이 끝나며 시간을 1로 되돌려
+            //   -> 카드가 떠 있는데 게임이 계속 돌아간다
+            if (_hitStopOwnsTime) Time.timeScale = 1f;
+
+            _hitStopOwnsTime = false;
+            _hitStopRoutine = null;
+        }
+
+        // 다른 쪽(레벨업 카드, 사망)이 시간을 멈출 때 부른다.
+        // 진행 중이던 히트스톱의 소유권을 뺏어서, 나중에 시간을 되돌리지 못하게 한다
+        public void CancelHitStop()
+        {
+            _hitStopOwnsTime = false;
+
+            if (_hitStopRoutine == null) return;
+            StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
         }
 
