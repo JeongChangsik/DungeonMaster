@@ -2,6 +2,7 @@ using System.Collections;
 using DungeonMaster.Core;
 using MoreMountains.Feedbacks;
 using MoreMountains.Tools;
+using DungeonMaster.Weapon;
 using UnityEngine;
 
 namespace DungeonMaster.Character.Enemy
@@ -55,6 +56,14 @@ namespace DungeonMaster.Character.Enemy
         // (ObjectPool.Release 는 모르는 오브젝트를 경고만 내고 무시해서, 죽어도 안 사라지는
         //  좀비 오브젝트가 된다)
         private bool _fromPool;
+
+        // 행동 유형별 상태
+        private float _nextChargeTime;      // 다음 돌진 가능 시각
+        private float _chargeStateEnd;      // 현재 단계(준비/돌진)가 끝나는 시각
+        private bool _isWindingUp;          // 돌진 준비 중(멈춰서 기 모으는 중)
+        private bool _isCharging;           // 돌진 중
+        private Vector2 _chargeDir;
+        private float _nextShootTime;
 
         public float MaxHp { get { return _enemySO.maxHp * _hpScale; } }
         public float ContactDamage { get { return _enemySO.attackDamage * _damageScale; } }
@@ -111,10 +120,114 @@ namespace DungeonMaster.Character.Enemy
             // 플레이어가 죽어서 파괴되면 target이 null이 됨
             if (_isDead || _target == null) return;
 
-            Vector2 direction = ((Vector2)_target.position - _rb.position).normalized;
-            _spriteRenderer.flipX = direction.x < 0f;
-            _rb.linearVelocity = direction * _enemySO.moveSpeed;
+            switch (_enemySO.behavior)
+            {
+                case EnemyBehavior.Charger: TickCharger(); break;
+                case EnemyBehavior.Ranged:  TickRanged();  break;
+                default:                    TickChase();   break;
+            }
         }
+
+        #region 행동 유형
+        private Vector2 DirectionToTarget
+        {
+            get { return ((Vector2)_target.position - _rb.position).normalized; }
+        }
+
+        private void FaceTarget(Vector2 dir)
+        {
+            if (Mathf.Abs(dir.x) > 0.01f) _spriteRenderer.flipX = dir.x < 0f;
+        }
+
+        // 기본: 플레이어를 향해 계속 직진
+        private void TickChase()
+        {
+            Vector2 dir = DirectionToTarget;
+            FaceTarget(dir);
+            _rb.linearVelocity = dir * _enemySO.moveSpeed;
+        }
+
+        // 돌진형: 가까워지면 잠깐 멈췄다가(피할 여유) 빠르게 돌진
+        private void TickCharger()
+        {
+            // 1) 돌진 중
+            if (_isCharging)
+            {
+                if (Time.time >= _chargeStateEnd)
+                {
+                    _isCharging = false;
+                    _nextChargeTime = Time.time + _enemySO.chargeCooldown;
+                }
+                else
+                {
+                    _rb.linearVelocity = _chargeDir * (_enemySO.moveSpeed * _enemySO.chargeSpeedMul);
+                    return;
+                }
+            }
+
+            // 2) 돌진 준비 중 - 멈춰 서서 방향만 본다
+            if (_isWindingUp)
+            {
+                _rb.linearVelocity = Vector2.zero;
+                FaceTarget(DirectionToTarget);
+
+                if (Time.time < _chargeStateEnd) return;
+
+                _isWindingUp = false;
+                _isCharging = true;
+                _chargeDir = DirectionToTarget;      // 준비가 끝난 시점의 방향으로 고정
+                _chargeStateEnd = Time.time + _enemySO.chargeDuration;
+                return;
+            }
+
+            // 3) 평소에는 천천히 접근하다가 사거리에 들면 준비 시작
+            Vector2 dir = DirectionToTarget;
+            FaceTarget(dir);
+            _rb.linearVelocity = dir * _enemySO.moveSpeed;
+
+            if (Time.time < _nextChargeTime) return;
+
+            float sqr = ((Vector2)_target.position - _rb.position).sqrMagnitude;
+            if (sqr > _enemySO.chargeTriggerDistance * _enemySO.chargeTriggerDistance) return;
+
+            _isWindingUp = true;
+            _chargeStateEnd = Time.time + _enemySO.chargeWindup;
+        }
+
+        // 원거리형: 선호 거리를 유지하며 주기적으로 발사
+        private void TickRanged()
+        {
+            Vector2 toTarget = (Vector2)_target.position - _rb.position;
+            float dist = toTarget.magnitude;
+            Vector2 dir = dist > 0.001f ? toTarget / dist : Vector2.right;
+            FaceTarget(dir);
+
+            float preferred = _enemySO.preferredDistance;
+
+            // 너무 가까우면 물러나고, 너무 멀면 다가가고, 적당하면 멈춘다
+            if (dist < preferred * 0.8f)      _rb.linearVelocity = -dir * _enemySO.moveSpeed;
+            else if (dist > preferred * 1.2f) _rb.linearVelocity = dir * _enemySO.moveSpeed;
+            else                              _rb.linearVelocity = Vector2.zero;
+
+            if (Time.time < _nextShootTime) return;
+            _nextShootTime = Time.time + _enemySO.shootInterval;
+
+            Shoot(dir);
+        }
+
+        private void Shoot(Vector2 dir)
+        {
+            if (_enemySO.projectilePrefab == null) return;
+
+            GameObject go = ObjectPool.Instance != null
+                ? ObjectPool.Instance.Spawn(_enemySO.projectilePrefab, transform.position)
+                : Instantiate(_enemySO.projectilePrefab, transform.position, Quaternion.identity);
+            if (go == null) return;
+
+            Projectile p = go.GetComponent<Projectile>();
+            if (p != null) p.Launch(dir, ContactDamage, _enemySO.projectileSpeed, 0, -90f);
+        }
+        #endregion
         #endregion
 
         #region 접촉 데미지
@@ -223,6 +336,14 @@ namespace DungeonMaster.Character.Enemy
             _isDead = false;
             _currHp = MaxHp;
             _lastContactTime = 0f;
+
+            // 행동 상태도 반드시 되돌린다.
+            // 안 그러면 돌진 도중에 죽은 적이 다음 스폰 때 돌진 상태로 튀어나온다
+            _isWindingUp = false;
+            _isCharging = false;
+            _nextChargeTime = 0f;
+            _chargeStateEnd = 0f;
+            _nextShootTime = 0f;
 
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
 

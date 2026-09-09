@@ -18,6 +18,9 @@ namespace DungeonMaster.Weapon
         [Tooltip("이 시간이 지나면 아무것도 못 맞혀도 풀로 돌아간다")]
         [SerializeField] private float _lifetime = 3f;
 
+        [Tooltip("맞힐 대상의 태그. 플레이어 무기는 Enemy, 적의 원거리 공격은 PLAYER")]
+        [SerializeField] private string _targetTag = "Enemy";
+
         protected Rigidbody2D _rb;
         protected float _damage;
         protected int _pierceLeft;
@@ -71,7 +74,7 @@ namespace DungeonMaster.Weapon
         protected virtual void OnTriggerEnter2D(Collider2D other)
         {
             if (_released) return;
-            if (!other.CompareTag("Enemy")) return;
+            if (!other.CompareTag(_targetTag)) return;
 
             if (_hitTargets.Contains(other)) return;
             _hitTargets.Add(other);

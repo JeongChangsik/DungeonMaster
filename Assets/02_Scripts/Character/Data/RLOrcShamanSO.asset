@@ -10,21 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f059f20a8d4942c99034712a8dabbd91, type: 3}
-  m_Name: RLGoblinSO
+  m_Name: RLOrcShamanSO
   m_EditorClassIdentifier: Assembly-CSharp::EnemySO
-  maxHp: 15
-  moveSpeed: 4
+  maxHp: 35
+  moveSpeed: 1.8
   chaseDistance: 5
-  attackDistance: 1
-  attackDamage: 14
-  attackCooldown: 0.8
-  behavior: 1
+  attackDistance: 2
+  attackDamage: 20
+  attackCooldown: 1
+  behavior: 2
   chargeTriggerDistance: 4.5
-  chargeWindup: 0.45
-  chargeSpeedMul: 3.5
-  chargeDuration: 0.4
-  chargeCooldown: 2.2
+  chargeWindup: 0.5
+  chargeSpeedMul: 4
+  chargeDuration: 0.45
+  chargeCooldown: 2.5
   preferredDistance: 6
-  shootInterval: 2
-  projectilePrefab: {fileID: 0}
-  projectileSpeed: 5
+  shootInterval: 2.2
+  projectilePrefab: {fileID: 3938877811767649288, guid: b93413750bfca6745899d7e4319d9194, type: 3}
+  projectileSpeed: 5.5
