@@ -71,9 +71,12 @@ namespace DungeonMaster.Character.Player
         [SerializeField] private float _flickerInterval = 0.08f;
         [Tooltip("맞았을 때 화면이 흔들리는 세기. 0이면 흔들리지 않는다")]
         [SerializeField] private float _hitShakeForce = 0.6f;
+        [Tooltip("맞는 순간 화면이 잠깐 멎는 시간(히트스톱). 0이면 멎지 않는다")]
+        [SerializeField] private float _hitStopDuration = 0.05f;
 
         private float _lastHitTime = -999f;
         private Coroutine _flickerRoutine;
+        private Coroutine _hitStopRoutine;
 
         public bool IsInvincible => Time.time < _lastHitTime + _invincibleDuration;
         #endregion
@@ -152,6 +155,7 @@ namespace DungeonMaster.Character.Player
             _lastHitTime = Time.time;
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.playerHurtSFX : null);
             ShakeOnHit(damage);
+            HitStop();
             base.TakeDamage(damage);
 
             if (!_isDead) StartFlicker();
@@ -167,6 +171,37 @@ namespace DungeonMaster.Character.Player
             // 큰 피해일수록 크게 흔든다. 최대 체력의 10%를 맞았을 때가 기준 세기
             float ratio = MaxHp > 0f ? damage / (MaxHp * 0.1f) : 1f;
             CameraShake.Instance.Shake(_hitShakeForce * Mathf.Clamp(ratio, 0.5f, 2f));
+        }
+
+        // 맞는 순간 화면 전체를 아주 잠깐 멈춘다. 한 대가 묵직하게 느껴진다.
+        //
+        // 적이 맞을 때마다 거는 것은 일부러 하지 않았다.
+        // 화면에 적이 백 마리 넘게 있고 공전 칼날이 쉬지 않고 때리기 때문에,
+        // 타격마다 멈추면 게임 전체가 슬로모션이 된다.
+        // 플레이어가 맞을 때만 걸면 무적 시간(0.6초) 덕분에 최대 초당 한 번뿐이라 안전하다.
+        private void HitStop()
+        {
+            if (_hitStopDuration <= 0f) return;
+
+            // 레벨업 카드로 이미 시간이 멈춰 있으면 건드리지 않는다.
+            // 여기서 끼어들면 카드를 고르는 도중에 시간이 다시 흘러버린다
+            if (!Mathf.Approximately(Time.timeScale, 1f)) return;
+
+            if (_hitStopRoutine != null) StopCoroutine(_hitStopRoutine);
+            _hitStopRoutine = StartCoroutine(HitStopCo());
+        }
+
+        private IEnumerator HitStopCo()
+        {
+            Time.timeScale = 0f;
+
+            // 시간이 멈춘 동안에도 흐르는 실제 시간으로 기다려야 한다.
+            // WaitForSeconds 를 쓰면 timeScale 이 0이라 영원히 안 끝난다
+            yield return new WaitForSecondsRealtime(_hitStopDuration);
+
+            // 기다리는 사이에 레벨업 카드가 떴다면 그쪽이 시간을 관리하게 둔다
+            if (Mathf.Approximately(Time.timeScale, 0f)) Time.timeScale = 1f;
+            _hitStopRoutine = null;
         }
 
         // 무적인 동안 스프라이트를 깜빡여 상태를 눈에 보이게 한다
