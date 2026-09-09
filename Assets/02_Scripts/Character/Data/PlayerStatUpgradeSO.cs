@@ -12,6 +12,11 @@ public enum PlayerStat
     PickupRadius,       // 경험치 자석 범위
     ExpGain,            // 경험치 획득량
     CooldownReduction,  // 공격 쿨다운 감소
+
+    // --- 아래는 모든 무기에 공통으로 적용되는 배율 ---
+    WeaponDamage,       // 모든 무기 피해량
+    WeaponArea,         // 모든 무기 범위
+    WeaponRate,         // 모든 무기 속도
 }
 
 [CreateAssetMenu(menuName = "DungeonMaster/Upgrade/플레이어 스탯")]

@@ -66633,11 +66633,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 908081c5bb34bdb45976031ecad54728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Weapon.WeaponOrbit
+  _damage: 10
   _weaponPrefab: {fileID: 4953160620267730618, guid: cdfaeb87ae58a4a41b018d836f0cefed, type: 3}
   _count: 0
   _radius: 1.5
   _angularSpeed: -180
-  _damage: 10
   _angleOffset: 0
 --- !u!1 &1675034799
 GameObject:
@@ -67524,6 +67524,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1823148060}
+  - component: {fileID: 1823148061}
   m_Layer: 8
   m_Name: WeaponRoot
   m_TagString: Untagged
@@ -67549,6 +67550,18 @@ Transform:
   - {fileID: 1989438496}
   m_Father: {fileID: 285568322}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1823148061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823148059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac457454e9a1b4748b0fa3d198d96c41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonMaster.Weapon.WeaponManager
 --- !u!1 &1920105750
 GameObject:
   m_ObjectHideFlags: 0

@@ -23,8 +23,12 @@ namespace DungeonMaster.Character.Player
         private int _currExp = 0;
         private int _level = 1;
 
-        // 공전 무기. 업그레이드가 이걸 통해 강화한다
-        public WeaponOrbit Orbit { get; private set; }
+        // 무기 전체를 관리한다. WeaponRoot 에 붙어 있음
+        public WeaponManager Weapons { get; private set; }
+
+        // 기존 업그레이드 SO(OrbitCountUpgradeSO 등) 호환용.
+        // 새 코드는 Weapons.Get<T>() 를 쓸 것
+        public WeaponOrbit Orbit => Weapons != null ? Weapons.Get<WeaponOrbit>() : null;
 
         #region 뱀서 전용 스탯
         // 구 GamePlay 씬에는 없는 개념이라 Player.cs 를 오염시키지 않고 여기에만 둔다
@@ -36,8 +40,16 @@ namespace DungeonMaster.Character.Player
         private float _mulPickup = 1f;
         private float _mulExpGain = 1f;
 
+        // 모든 무기에 공통으로 곱해지는 배율. WeaponBase 가 읽어간다
+        private float _mulWeaponDamage = 1f;
+        private float _mulWeaponArea = 1f;
+        private float _mulWeaponRate = 1f;
+
         public float PickupRadius => (_pickupRadius + _bonusPickup) * _mulPickup;
         public float ExpGainMul => _mulExpGain;
+        public float WeaponDamageMul => _mulWeaponDamage;
+        public float WeaponAreaMul => _mulWeaponArea;
+        public float WeaponRateMul => _mulWeaponRate;
         #endregion
 
         #region 유니티 생명주기
@@ -53,8 +65,9 @@ namespace DungeonMaster.Character.Player
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _inputHandler = GetComponent<InputHandler>();
 
-            // 계층이 Player > WeaponRoot > OrbitPivot 이라 손자까지 훑어야 함
-            Orbit = GetComponentInChildren<WeaponOrbit>();
+            // 계층이 Player > WeaponRoot > (OrbitPivot / ProjectileMuzzle / AuraArea)
+            Weapons = GetComponentInChildren<WeaponManager>();
+            if (Weapons == null) Debug.LogError("RoguelikePlayer::Awake() WeaponManager 를 찾지 못했습니다. WeaponRoot 에 붙어 있는지 확인하세요.");
 
             // _expBar.fillAmount = 0f;
         }
@@ -166,6 +179,23 @@ namespace DungeonMaster.Character.Player
 
                 case PlayerStat.ExpGain:
                     _mulExpGain += percent;
+                    break;
+
+                // 전역 무기 배율은 값만 바꿔선 부족하다.
+                // 이미 배치된 칼날들이 옛 피해량을 들고 있으므로 반드시 다시 내려보내야 한다
+                case PlayerStat.WeaponDamage:
+                    _mulWeaponDamage += percent;
+                    if (Weapons != null) Weapons.RebuildAll();
+                    break;
+
+                case PlayerStat.WeaponArea:
+                    _mulWeaponArea += percent;
+                    if (Weapons != null) Weapons.RebuildAll();
+                    break;
+
+                case PlayerStat.WeaponRate:
+                    _mulWeaponRate += percent;
+                    if (Weapons != null) Weapons.RebuildAll();
                     break;
             }
         }
