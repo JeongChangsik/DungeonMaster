@@ -137,6 +137,10 @@ namespace DungeonMaster.UI
         private int GetLevel(UpgradeSO upgrade)
             => _levels.TryGetValue(upgrade, out int level) ? level : 0;
 
+        // 카드가 지금 떠 있는가. 일시정지 메뉴가 닫힐 때
+        // "시간을 다시 흐르게 해도 되는지" 판단하려고 물어본다
+        public bool IsShowing { get { return _panel != null && _panel.activeSelf; } }
+
         // 지금까지 고른 업그레이드가 바뀔 때마다 알린다. BuildHUD 가 듣는다
         public event System.Action OnUpgradesChanged;
 

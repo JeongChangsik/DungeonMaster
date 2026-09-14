@@ -1,9 +1,9 @@
 using System.Collections;
 using DungeonMaster.Character.Enemy;
 using DungeonMaster.Character.Player;
+using DungeonMaster.Core;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace DungeonMaster.UI
@@ -128,18 +128,11 @@ namespace DungeonMaster.UI
             }
         }
 
-        // 버튼이 호출한다. 시간이 멈춰 있어도 UI 버튼은 눌린다
+        // 버튼이 호출한다. 시간이 멈춰 있어도 UI 버튼은 눌린다.
+        // 실제 처리는 GameFlow 에 모아뒀다. 일시정지 메뉴도 같은 것을 쓴다
         public void Restart()
         {
-            // 되돌리지 않으면 새 판이 멈춘 채로 시작한다
-            Time.timeScale = 1f;
-
-            // 창고는 씬을 다시 불러와도 살아남는다.
-            // 비우지 않으면 죽기 직전의 적과 코인이 새 판에 그대로 남는다
-            if (ObjectPool.Instance != null) ObjectPool.Instance.ReleaseAllActive();
-
-            Scene scene = SceneManager.GetActiveScene();
-            SceneManager.LoadScene(scene.buildIndex);
+            GameFlow.RestartScene();
         }
 
         private void CheckReferences()
