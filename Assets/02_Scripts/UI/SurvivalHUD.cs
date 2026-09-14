@@ -5,11 +5,18 @@ using UnityEngine;
 
 namespace DungeonMaster.UI
 {
-    // 무한 생존 모드의 현황판. Canvas 아래 빈 오브젝트에 붙여서 사용.
-    //
-    // 생존 시간 / 처치 수 / 레벨 세 가지를 보여준다.
-    // 끝이 없는 게임이라 "얼마나 버텼는가"가 유일한 성과 지표인데,
-    // 지금까지는 그걸 볼 방법이 전혀 없었다.
+    // [하는 일] 무한 생존 모드의 현황판. 생존 시간 / 처치 수 / 레벨 세 가지를 화면에 보여준다.
+    //          끝이 없는 게임이라 "얼마나 버텼는가"가 유일한 성과 지표인데,
+    //          지금까지는 그걸 볼 방법이 전혀 없었다.
+    // [붙이는 곳] Canvas 아래 빈 오브젝트에 붙여서 사용. 지금은 씬의 Canvas/HUD 에 붙어 있다.
+    //          인스펙터의 Time Text / Stats Text 에는 HUD 아래 글자(생존시간, 현황)를,
+    //          Player 에는 씬(Hierarchy)의 Warrior 를 끌어다 놓는다.
+    // [연결] RoguelikePlayer.Level 을 읽어 레벨을 보여준다.
+    //        RoguelikeEnemy.TotalKills 로 처치 수를 읽는다. static 값(모든 적이 함께 쓰는 숫자 하나)이라 적을 찾을 필요가 없다.
+    //        GameOverUI 가 ElapsedSeconds 와 FormatTime 을 가져다 결과 화면에 쓴다.
+    // [설계] 알림(이벤트)을 기다리지 않고 Update 에서 매 프레임 값을 확인한다.
+    //        대신 숫자가 실제로 바뀐 프레임에만 글자를 다시 쓴다.
+    //        (TextMeshPro: 유니티의 글자 표시 컴포넌트. text 에 문자열을 넣으면 화면 글자가 바뀐다)
     public class SurvivalHUD : MonoBehaviour
     {
         [Header("표시할 텍스트")]
@@ -21,12 +28,15 @@ namespace DungeonMaster.UI
         [Header("참조")]
         [SerializeField] private RoguelikePlayer _player;
 
+        // 판이 시작된 순간의 Time.time. 지금 Time.time 에서 이 값을 빼면 버틴 시간이 나온다
         private float _startTime;
 
-        // 결과 화면이 읽어간다
+        // 결과 화면이 읽어간다.
+        // 죽는 순간 시간이 멈추므로(timeScale 0) 결과 화면이 읽을 때는 죽은 순간의 값에 머물러 있다
         public float ElapsedSeconds { get { return Time.time - _startTime; } }
 
         // 00:00 형식으로. 결과 화면과 HUD 가 같은 규칙을 쓰도록 여기 모아둔다
+        // static 이라 SurvivalHUD 오브젝트를 찾지 않고도 SurvivalHUD.FormatTime(...) 으로 부를 수 있다
         public static string FormatTime(float seconds)
         {
             int total = Mathf.Max(0, Mathf.FloorToInt(seconds));
@@ -57,6 +67,7 @@ namespace DungeonMaster.UI
             UpdateStats();
         }
 
+        // 생존 시간 글자를 갱신한다. 매 프레임 불리지만 초가 바뀐 프레임에만 실제로 글자를 쓴다
         private void UpdateTime()
         {
             if (_timeText == null) return;
@@ -68,6 +79,7 @@ namespace DungeonMaster.UI
             _timeText.text = FormatTime(total);
         }
 
+        // 레벨과 처치 수 글자를 갱신한다. 둘 중 하나라도 바뀐 프레임에만 다시 쓴다
         private void UpdateStats()
         {
             if (_statsText == null) return;

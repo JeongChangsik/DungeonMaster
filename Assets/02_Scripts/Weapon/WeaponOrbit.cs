@@ -8,6 +8,16 @@ namespace DungeonMaster.Weapon
     // 무기가 2개든 8개든 회전 코드가 한 줄로 끝나기 때문
     //
     // _damage 는 WeaponBase 로 올라갔다. 직렬화 키 이름이 같으므로 씬에 저장된 값은 그대로 유지된다.
+    //
+    // [하는 일] 플레이어 주위를 빙글빙글 도는 칼날(공전 칼날). 닿는 적에게 피해를 준다.
+    // [붙이는 곳] 위 설명대로 Player > WeaponRoot > OrbitPivot 에 부착.
+    //           _weaponPrefab 에는 OrbitWeapon 이 붙은 칼날 프리팹을 넣는다.
+    // [연결] WeaponBase 를 물려받는다. 칼날 하나하나의 피격 판정은 칼날 프리팹의 OrbitWeapon 이 한다.
+    //        WeaponUpgradeSO 는 AddStat() 을, 옛 카드(OrbitCountUpgradeSO 등)는 AddCount() 같은 전용 함수를 부른다.
+    //        전역 배율 카드가 오면 WeaponManager.RebuildAll() 을 통해 Rebuild() 가 불린다.
+    // [설계] 다른 무기와 달리 칼날을 미리 만들어 두는 무기라서, 스탯이 바뀔 때마다 Rebuild() 로
+    //        칼날을 전부 지우고 다시 만든다. Rebuild 는 게임 시작(Start)과 카드를 고를 때만 불려서
+    //        자주 일어나지 않으므로, 오브젝트 풀 없이 Instantiate/Destroy 로 새로 만든다.
     public class WeaponOrbit : WeaponBase
     {
         [Header("궤도 설정")]
@@ -43,6 +53,9 @@ namespace DungeonMaster.Weapon
         // 별도의 해금 플래그를 두면 개수와 어긋날 수 있어서 개수로 판단한다.
         public override bool IsUnlocked => EffectiveCount > 0;
 
+        // 기본값 + 강화분 + 전역 배율을 합친 "지금 실제로 쓰는 값".
+        // 반경은 0.1 아래로 내려가지 않게 막았다. 0 이나 음수가 되면 칼날이 한 점에 뭉치거나 반대편으로 뒤집힌다.
+        // 회전 속도에 GlobalRateMul 을 곱해서 "모든 무기 속도 UP" 카드가 칼날 회전에도 먹힌다.
         public int EffectiveCount => Mathf.Max(0, _count + _addCount);
         public float EffectiveRadius => Mathf.Max(0.1f, (_radius + _addRadius) * _mulRadius * GlobalAreaMul);
         public float EffectiveAngularSpeed => _angularSpeed * _mulSpeed * GlobalRateMul;
@@ -80,9 +93,12 @@ namespace DungeonMaster.Weapon
 
             ClearWeapons();
 
+            // 개수가 0 이면(아직 해금 전) 옛 칼날만 지우고 끝낸다.
+            // 지우기를 먼저 하는 이유: 개수가 줄어든 경우에도 남은 칼날이 없어야 하기 때문
             int count = EffectiveCount;
             if (count <= 0) return;
 
+            // 반복문 안에서 매번 계산하지 않도록 한 번만 구해 둔다
             float radius = EffectiveRadius;
             float damage = Damage;
 
@@ -106,6 +122,8 @@ namespace DungeonMaster.Weapon
                 // 칼날이 훑는 구간은 (반경 ± 칼날 길이의 절반) 인데, 반경만 커지면
                 // 그 구간이 통째로 바깥으로 밀려나서 플레이어에게 붙어 있는 적을 아예 못 때린다.
                 // 크기까지 같이 키우면 훑는 구간이 넓어지므로 안쪽도 계속 닿는다.
+                // 인스펙터의 기본 반경(_radius)일 때 원래 크기(배율 1)가 되도록 기본 반경으로 나눈다.
+                // Max(0.01) 은 기본 반경이 0 일 때 0 으로 나누는 사고를 막는다.
                 weapon.transform.localScale = _baseWeaponScale * (radius / Mathf.Max(0.01f, _radius));
 
                 weapon.GetComponent<OrbitWeapon>()?.SetDamage(damage);
@@ -131,6 +149,8 @@ namespace DungeonMaster.Weapon
 
         #region 강화
         // WeaponUpgradeSO 가 쓰는 통합 진입점
+        // 공전 칼날 전용 스탯(개수, 반경, 회전 속도)을 여기서 쌓는다. Pierce 는 칼날에 의미가 없어 무시된다.
+        // 개수는 정수라서 flat 을 반올림해서 더한다(카드에 1 을 넣으면 칼날 1개)
         public override void AddStat(WeaponStat stat, float flat, float percent)
         {
             switch (stat)
@@ -173,6 +193,8 @@ namespace DungeonMaster.Weapon
             Rebuild();
         }
 
+        // 옛 카드용이라 배율에 "곱한다". 새 카드의 AddStat(Rate) 는 "더한다".
+        // 두 종류를 섞어 먹으면 먹은 순서에 따라 최종 속도가 조금 달라진다.
         public void MultiplySpeed(float multiplier)
         {
             _mulSpeed *= multiplier;   // 회전만 빨라지면 되므로 Rebuild 불필요

@@ -12,6 +12,37 @@ using DungeonMaster.Weapon;
 
 namespace DungeonMaster.Character.Player
 {
+    // [하는 일] 뱀서라이크(RogueLike 씬) 플레이어의 공통 부모. 경험치/레벨업, 자동 공격 타이머, 무적 시간,
+    //          피격 연출(흔들림, 히트스톱, 깜빡임), 사망 연출, 레벨업 카드로 받는 스탯 강화를 맡는다.
+    // [붙이는 곳] 직접 붙이지 않는다(abstract). 자식인 RoguelikeWarrior 를 플레이어 오브젝트에 붙인다.
+    // [연결] 부모 Player      : 체력, 이동, 기본 피격/사망
+    //        WeaponManager    : 자식 오브젝트 WeaponRoot 에 붙어 있다. 실제 공격은 무기들이 한다
+    //        WeaponBase       : WeaponDamageMul / AreaMul / RateMul 을 읽어 모든 무기에 곱한다
+    //        Coin             : PickupRadius 로 끌려오기 시작하고, 닿으면 AddExp 를 부른다
+    //        LevelUpUI        : OnLevelUpAction 을 듣고 카드를 띄운다. 다 고르면 ResumeExpGain 을 부른다
+    //        GameOverUI, PauseMenuUI : OnDied 를 듣는다
+    // [설계] 구 GamePlay 씬에 없는 기능(경험치, 무적, 무기 배율 등)은 Player.cs 에 넣지 않고 전부 여기에 뒀다.
+    //        그래야 구 씬의 난이도와 동작이 바뀌지 않는다.
+    //        Awake 도 base.Awake() 를 부르지 않고 새로 썼다. 부모 Awake 는 "Canvas" 의 Image 와 "Arm" 을 찾는데,
+    //        이 씬에는 그런 오브젝트가 없기 때문이다.
+    //
+    // Time.timeScale(게임 전체 시간의 빠르기. 1 = 보통, 0 = 멈춤)을 건드리는 곳이 넷 있다.
+    //   1. 피격 히트스톱 (이 파일 HitStop)      : 0.05초만 멈췄다가 1로 되돌린다
+    //   2. 레벨업 카드   (LevelUpUI)            : 카드를 고를 때까지 멈춘다
+    //   3. 사망          (이 파일 Die)          : 멈춘 채로 끝난다
+    //   4. 일시정지 메뉴 (PauseMenuUI)          : 열려 있는 동안 멈춘다
+    // 히트스톱만 "스스로 시간을 되돌리는" 짧은 멈춤이라, 다른 셋이 끼어들면 CancelHitStop() 으로 소유권을 뺏는다.
+    //
+    // 파일 안내 (위에서 아래 순서)
+    //   필드: 경험치 -> 무기 -> 뱀서 전용 스탯 -> 무적 시간 / 사망 연출
+    //   유니티 생명주기 (Awake, OnEnable, OnDisable, Update)
+    //   FlipDirection, TakeDamage, ShakeOnHit
+    //   사망 (Die, DeathFallCo)
+    //   히트스톱 (HitStop, HitStopCo, CancelHitStop)
+    //   무적 깜빡임 (StartFlicker, FlickerCo)
+    //   경험치 / 레벨업 (AddExp, LevelUp, OnExpBarFilled, RefreshExpBar)
+    //   스탯 강화 (AddDefense, TickRegen, ApplyStatUpgrade)
+    //   ResumeExpGain
     public abstract class RoguelikePlayer : Player
     {
         // [SerializeField] protected Image _expBar;
@@ -39,6 +70,7 @@ namespace DungeonMaster.Character.Player
         [Tooltip("경험치 코인이 빨려오기 시작하는 거리")]
         [SerializeField] private float _pickupRadius = 3f;
 
+        // 강화 누적값. Player.cs 와 같은 규칙으로 _bonus 는 0, _mul 은 1 이면 강화 없음이다
         private float _bonusPickup;
         private float _mulPickup = 1f;
         private float _mulExpGain = 1f;
@@ -85,19 +117,24 @@ namespace DungeonMaster.Character.Player
         private Coroutine _hitStopRoutine;
 
         // 지금 시간을 멈춰둔 주체가 히트스톱인지.
-        // 레벨업 카드나 사망이 시간을 넘겨받으면 false 가 되어, 히트스톱은 손을 뗀다
+        // 레벨업 카드, 일시정지 메뉴, 사망이 시간을 넘겨받으면 false 가 되어, 히트스톱은 손을 뗀다
         private bool _hitStopOwnsTime;
 
         // 죽는 처리가 두 번 돌지 않도록
         private bool _deathHandled;
 
         // 쓰러지는 연출이 끝나면 결과 화면(GameOverUI)에 알린다
+        // PauseMenuUI 도 듣는다. 죽은 뒤에는 ESC 메뉴가 열리지 않게 하고, 열려 있었다면 닫는다
         public event Action OnDied;
 
+        // 마지막으로 맞은 시각에서 무적 시간이 아직 안 지났으면 무적이다.
+        // Time.time 은 timeScale 의 영향을 받아서, 시간이 멈춘 동안에는 무적 시간도 줄어들지 않는다
         public bool IsInvincible => Time.time < _lastHitTime + _invincibleDuration;
         #endregion
 
         #region 유니티 생명주기
+        // 부모 Player.Awake 를 base 로 부르지 않고 필요한 부분만 다시 적었다 (이유는 클래스 설명 [설계] 참고).
+        // 무기는 자식 오브젝트 WeaponRoot 에서 찾아 둔다
         protected override void Awake()
         {
             Debug.Log($"RoguelikePlayer::Awake()");
@@ -135,12 +172,18 @@ namespace DungeonMaster.Character.Player
             _expBar.OnBarMovementIncreasingStop.RemoveListener(OnExpBarFilled);
         }
 
+        // 매 프레임 불린다. 체력 회복을 조금씩 쌓고, 공격 쿨다운이 지날 때마다 자동으로 공격한다.
+        // 뱀서라이크는 공격 버튼이 없어서, 구 씬의 OnAttack(버튼 입력) 대신 이 타이머가 공격을 대신 누른다
         private void Update()
         {
             if (_isDead) return;
 
             TickRegen();
 
+            // 마지막 공격 후 AttackCooldown 초가 안 지났으면 아직 공격하지 않는다.
+            // 공격 애니메이션을 틀고 Attack() 을 부르지만, RoguelikeWarrior 의 Attack() 은 비어 있다.
+            // 주된 피해는 WeaponRoot 아래 무기들이 각자 준다.
+            // (참고: Player@attack 클립에는 OnAttackAnimEvent 를 부르는 애니메이션 이벤트가 있다)
             if (Time.time < lastAttackTime + AttackCooldown) return;
 
             lastAttackTime = Time.time;
@@ -163,6 +206,9 @@ namespace DungeonMaster.Character.Player
             }
         }
 
+        // 적에게 맞았을 때 불린다. RoguelikeWarrior.TakeDamage 가 방어력을 뺀 뒤 여기로 내려온다.
+        // 무적 검사를 통과하면 맞은 시각을 적어 무적을 시작하고, 소리/흔들림/히트스톱을 낸 다음
+        // base.TakeDamage 로 실제 체력을 깎는다. 그 결과 죽지 않았을 때만 깜빡임을 시작한다
         public override void TakeDamage(float damage)
         {
             if (_isDead) return;
@@ -190,6 +236,8 @@ namespace DungeonMaster.Character.Player
         }
 
         #region 사망
+        // 체력이 0 이하가 되면 부모 Player.TakeDamage 가 부른다. _deathHandled 로 딱 한 번만 돈다.
+        //
         // 죽는 순간 세상을 통째로 멈춘다.
         //
         // 죽음의 무게는 '정지'에서 나온다. 적도, 무기도, 시간도 그 자리에서 멎고
@@ -224,6 +272,11 @@ namespace DungeonMaster.Character.Player
             StartCoroutine(DeathFallCo());
         }
 
+        // 쓰러지는 연출. Die 가 StartCoroutine 으로 시작한다.
+        // 코루틴은 "여러 프레임에 나눠서 조금씩 실행되는 함수"다. yield return null 에서 멈췄다가 다음 프레임에 이어간다.
+        // 시간이 멈춰(timeScale 0) 있어서 Time.deltaTime 은 0 이다. 그래서 멈춤과 상관없이 흐르는
+        // Time.unscaledDeltaTime 으로 진행도를 올린다. 0.6초 동안 색은 붉게, 몸은 90도로 눕힌다.
+        // 다 끝나면 OnDied 이벤트로 GameOverUI(결과 화면)와 PauseMenuUI 에 알린다
         private IEnumerator DeathFallCo()
         {
             Color from = _spriteRenderer != null ? _spriteRenderer.color : Color.white;
@@ -258,7 +311,7 @@ namespace DungeonMaster.Character.Player
         {
             if (_hitStopDuration <= 0f) return;
 
-            // 레벨업 카드로 이미 시간이 멈춰 있으면 건드리지 않는다.
+            // 레벨업 카드나 일시정지 메뉴로 이미 시간이 멈춰 있으면 건드리지 않는다.
             // 여기서 끼어들면 카드를 고르는 도중에 시간이 다시 흘러버린다
             if (!Mathf.Approximately(Time.timeScale, 1f)) return;
 
@@ -266,6 +319,7 @@ namespace DungeonMaster.Character.Player
             _hitStopRoutine = StartCoroutine(HitStopCo());
         }
 
+        // 히트스톱 본체 코루틴. 시간을 0으로 멈추고, 실제 시간으로 잠깐 기다린 뒤, 소유권이 남아 있을 때만 1로 되돌린다
         private IEnumerator HitStopCo()
         {
             _hitStopOwnsTime = true;
@@ -275,7 +329,7 @@ namespace DungeonMaster.Character.Player
             // WaitForSeconds 를 쓰면 timeScale 이 0이라 영원히 안 끝난다
             yield return new WaitForSecondsRealtime(_hitStopDuration);
 
-            // 기다리는 사이에 레벨업 카드나 사망 처리가 시간을 넘겨받았을 수 있다.
+            // 기다리는 사이에 레벨업 카드, 일시정지 메뉴, 사망 처리가 시간을 넘겨받았을 수 있다.
             // 그때는 소유권이 없으므로 손대지 않는다.
             //
             // 이 검사가 없으면 이런 일이 벌어진다:
@@ -289,7 +343,7 @@ namespace DungeonMaster.Character.Player
             _hitStopRoutine = null;
         }
 
-        // 다른 쪽(레벨업 카드, 사망)이 시간을 멈출 때 부른다.
+        // 다른 쪽이 시간을 멈출 때 부른다. LevelUpUI(카드 띄울 때), PauseMenuUI(메뉴 열 때), 이 파일의 Die.
         // 진행 중이던 히트스톱의 소유권을 뺏어서, 나중에 시간을 되돌리지 못하게 한다
         public void CancelHitStop()
         {
@@ -307,6 +361,9 @@ namespace DungeonMaster.Character.Player
             _flickerRoutine = StartCoroutine(FlickerCo());
         }
 
+        // 무적이 끝날 때까지 스프라이트를 켰다 껐다 한다.
+        // 여기서는 WaitForSeconds(멈춘 시간에는 같이 멈추는 대기)를 일부러 쓴다.
+        // 무적 시간도 Time.time 기준이라, 시간이 멈추면 깜빡임과 무적이 함께 멈췄다가 함께 이어진다
         private IEnumerator FlickerCo()
         {
             while (IsInvincible)
@@ -322,6 +379,8 @@ namespace DungeonMaster.Character.Player
 
         public void AddExp(int exp)
         {
+            // 코인이 닿으면 Coin.cs 가 부른다. '경험치 획득량' 카드 배율(ExpGainMul)을 곱하고,
+            // 반올림해서 0이 되더라도 최소 1은 오르게 한다
             _currExp += Mathf.Max(1, Mathf.RoundToInt(exp * ExpGainMul));
 
             // 여기서는 레벨업하지 않는다. 바가 다 찬 뒤에 OnExpBarFilled가 처리함
@@ -378,6 +437,8 @@ namespace DungeonMaster.Character.Player
         }
 
         // 레벨업 카드(PlayerStatUpgradeSO)가 호출하는 단일 진입점
+        // 카드는 "어떤 스탯을 얼마나"만 넘기고, 실제로 어느 변수를 바꿀지는 여기서 정한다.
+        // flat 은 그대로 더하는 값, percent 는 비율(0.1 = 10%)이다. 스탯마다 둘 중 한쪽만 쓰기도 한다
         public void ApplyStatUpgrade(PlayerStat stat, float flat, float percent)
         {
             switch (stat)

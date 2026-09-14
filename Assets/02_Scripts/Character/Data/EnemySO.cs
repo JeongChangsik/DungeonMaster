@@ -11,6 +11,17 @@ public enum EnemyBehavior
     Bomber,     // 달라붙으면 잠깐 멎었다가 자폭
 }
 
+// [하는 일] 적 한 종류의 능력치 표다. 체력, 속도, 공격력, 행동 유형, 떨구는 보상 같은 숫자를 적어 둔다.
+// [붙이는 곳] 게임오브젝트에 붙이지 않는다. Project 창에서 우클릭 > Create > DungeonMaster > EnemySO 로
+//            .asset 파일을 만들고, 적 프리팹(RL_Goblin 등)의 RoguelikeEnemy "Enemy SO" 칸에 끌어다 넣는다.
+// [연결] RoguelikeEnemy 가 읽기만 한다. 구 GamePlay 씬의 Enemy/Swampy 도 "기본 스탯" 부분을 같이 쓴다.
+// [설계] ScriptableObject 는 "여러 프리팹이 함께 보는 설정 파일"이다.
+//        고블린이 100마리 나와도 표는 하나라서, 숫자 하나를 고치면 전부 같이 바뀐다.
+//        그래서 게임 도중에 코드로 이 값을 바꾸면 안 된다. 모든 적이 한꺼번에 바뀌고,
+//        에디터에서는 플레이를 멈춰도 바뀐 값이 파일에 그대로 남는다.
+//        시간이 갈수록 강해지는 배율은 여기가 아니라 RoguelikeEnemy 쪽(_hpScale, _damageScale)에 따로 둔다.
+// [설계] 단위: 거리는 유니티 단위(바닥 타일 한 칸 = 1), 시간은 초, moveSpeed 는 1초에 가는 칸 수다.
+//        기본 스탯 중 chaseDistance / attackDistance 는 FSM 적 전용이라 뱀서라이크에서는 쓰지 않는다.
 [CreateAssetMenu(fileName = "EnemySO", menuName = "DungeonMaster/EnemySO", order = 0)]
 public class EnemySO : ScriptableObject
 {
@@ -36,6 +47,10 @@ public class EnemySO : ScriptableObject
     [Tooltip("맞았을 때 밀려나는 것에 대한 저항. 0이면 그대로 밀리고, 1이면 꿈쩍도 안 한다")]
     [Range(0f, 1f)] public float knockbackResist = 0f;
 
+    // 아래 "돌진형 / 자폭형 / 원거리형" 설정은 behavior 가 그 유형일 때만 읽힌다. 다른 유형이면 무시된다.
+    //
+    // 돌진형 한 바퀴: 걸어서 다가감 -> chargeTriggerDistance 안에 들어옴 -> chargeWindup 초 동안 멈춤
+    //   -> chargeDuration 초 동안 (moveSpeed x chargeSpeedMul) 속도로 직선 돌진 -> chargeCooldown 초 동안 다시 걷기만
     [Header("돌진형 설정")]
     [Tooltip("이 거리 안에 들어오면 돌진을 준비한다")]
     public float chargeTriggerDistance = 4.5f;
@@ -63,6 +78,8 @@ public class EnemySO : ScriptableObject
     public float preferredDistance = 6f;
     [Tooltip("발사 주기(초)")]
     public float shootInterval = 2f;
+    // 쏘는 투사체 프리팹(루트에 Projectile 컴포넌트가 있어야 한다)과 날아가는 속도(1초에 가는 칸 수).
+    // 프리팹이 비어 있으면 원거리형이라도 쏘지 않고 거리만 유지한다
     public GameObject projectilePrefab;
     public float projectileSpeed = 5f;
 }

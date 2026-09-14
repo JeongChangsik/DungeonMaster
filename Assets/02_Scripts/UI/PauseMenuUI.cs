@@ -9,9 +9,19 @@ namespace DungeonMaster.UI
 {
     // ESC 로 여닫는 옵션 메뉴. 열려 있는 동안 게임은 멈춘다.
     //
-    // 이 게임에서 시간을 멈추는 주체가 이미 셋 있다 — 피격 히트스톱, 레벨업 카드, 사망.
-    // 여기가 넷째다. 그래서 "멈추는 것"보다 "다시 흐르게 하는 것"이 어렵다.
-    // 자세한 내용은 RestoreTime() 참고.
+    // [하는 일] ESC 로 일시정지 메뉴를 열고 닫는다. 메뉴 안에서 소리 크기 조절, 다시 시작, 게임 종료를 할 수 있다.
+    // [붙이는 곳] 씬의 Canvas/PauseMenuUI 오브젝트. 이 오브젝트 자체는 켜 둔 채로 두고, Panel 과 Dim 만 코드가 켜고 끈다.
+    //          (이 오브젝트가 꺼져 있으면 Update 가 돌지 않아 ESC 를 못 받는다)
+    //          인스펙터에서 Player 에 씬의 Warrior, Level Up UI 에 Canvas 아래 LevelUpUI, 나머지 칸에 메뉴 안의 슬라이더 / 글자 / 버튼을 넣는다.
+    //          버튼과 슬라이더의 기능은 인스펙터의 On Click 칸이 아니라 Awake 에서 코드로 연결한다.
+    // [연결] RoguelikePlayer : OnDied 를 듣고, 메뉴를 열 때 CancelHitStop 을 부른다
+    //        LevelUpUI       : 닫을 때 IsShowing 으로 카드가 떠 있는지 물어본다
+    //        GameFlow        : 다시 시작 / 게임 종료
+    // [설계] 이 게임에서 시간을 멈추는 주체가 이미 셋 있다 — 피격 히트스톱, 레벨업 카드, 사망.
+    //        여기가 넷째다. 그래서 "멈추는 것"보다 "다시 흐르게 하는 것"이 어렵다.
+    //        자세한 내용은 RestoreTime() 참고.
+    //        소리 크기는 AudioListener.volume(게임 전체 소리에 걸리는 볼륨 손잡이 하나)에 걸고,
+    //        PlayerPrefs(게임을 꺼도 남는 작은 저장 공간) 키 DM_Volume 에 저장한다. 이유는 OnVolumeChanged() 참고.
     public class PauseMenuUI : MonoBehaviour
     {
         [Header("참조")]
@@ -29,13 +39,18 @@ namespace DungeonMaster.UI
         [SerializeField] private Button _restartButton;
         [SerializeField] private Button _quitButton;
 
+        // PlayerPrefs 에 소리 크기를 넣고 꺼낼 때 쓰는 이름표
         private const string KeyVolume = "DM_Volume";
 
         private bool _isOpen;
+
+        // 한 번 죽으면 true 로 남는다. 다시 시작하면 씬과 함께 이 컴포넌트도 새로 만들어져 false 로 돌아간다
         private bool _playerDead;
 
+        // 밖에서는 읽기만 할 수 있게 내놓은 "지금 열려 있는가"
         public bool IsOpen { get { return _isOpen; } }
 
+        // 시작할 때 저장된 소리 크기를 적용하고, 슬라이더와 버튼에 함수를 연결한 뒤 메뉴를 숨긴다
         private void Awake()
         {
             CheckReferences();
@@ -49,11 +64,15 @@ namespace DungeonMaster.UI
             {
                 _volumeSlider.minValue = 0f;
                 _volumeSlider.maxValue = 1f;
+                // SetValueWithoutNotify: 손잡이 위치만 옮기고 "값이 바뀌었다" 알림은 보내지 않는다.
+                // 시작하자마자 괜히 저장이 한 번 더 일어나지 않게 한다
                 _volumeSlider.SetValueWithoutNotify(saved);
+                // AddListener: "값이 바뀌면 이 함수를 불러 달라"고 등록한다
                 _volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
             }
             ShowVolumeValue(saved);
 
+            // GameFlow 는 static 클래스라 오브젝트 없이 함수 이름을 그대로 버튼에 걸 수 있다
             if (_restartButton != null) _restartButton.onClick.AddListener(GameFlow.RestartScene);
             if (_quitButton != null) _quitButton.onClick.AddListener(GameFlow.QuitGame);
 
@@ -90,12 +109,14 @@ namespace DungeonMaster.UI
             Toggle();
         }
 
+        // ESC 한 번에 열려 있으면 닫고, 닫혀 있으면 연다
         public void Toggle()
         {
             if (_isOpen) Close();
             else Open();
         }
 
+        // 메뉴를 열고 시간을 멈춘다. 이미 열려 있거나 플레이어가 죽었으면 아무것도 안 한다
         public void Open()
         {
             if (_isOpen) return;
@@ -116,6 +137,8 @@ namespace DungeonMaster.UI
             if (_panel != null) _panel.SetActive(true);
         }
 
+        // 메뉴를 닫는다. ESC 를 다시 누를 때, 그리고 메뉴가 열린 채로 플레이어가 죽을 때 불린다.
+        // 시간을 되돌리는 일은 RestoreTime 에 맡긴다
         public void Close()
         {
             if (!_isOpen) return;
@@ -143,6 +166,7 @@ namespace DungeonMaster.UI
             Time.timeScale = 1f;
         }
 
+        // 소리 크기 슬라이더를 움직일 때마다 불린다. 바로 적용하고 바로 저장한다
         private void OnVolumeChanged(float value)
         {
             value = Mathf.Clamp01(value);
@@ -159,12 +183,14 @@ namespace DungeonMaster.UI
             ShowVolumeValue(value);
         }
 
+        // 0~1 값을 0~100% 글자로 바꿔 슬라이더 옆에 보여준다
         private void ShowVolumeValue(float value)
         {
             if (_volumeValueText == null) return;
             _volumeValueText.text = Mathf.RoundToInt(value * 100f) + "%";
         }
 
+        // 인스펙터 칸이 비어 있으면 무엇을 끌어다 놓아야 하는지 콘솔에 알려준다
         private void CheckReferences()
         {
             if (_player == null)

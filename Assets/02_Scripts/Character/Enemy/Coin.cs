@@ -3,6 +3,13 @@ using DungeonMaster.Character.Player;
 
 // 경험치 코인. 오브젝트 풀에서 재사용된다.
 // IPoolable 은 반드시 프리팹 루트에 있어야 한다(ObjectPool.Spawn 이 GetComponent 로 찾음).
+//
+// [하는 일] 적이 죽을 때 떨구는 경험치 코인. 플레이어가 가까이 오면 끌려가고, 닿으면 경험치를 주고 사라진다.
+// [붙이는 곳] ExpCoin 프리팹의 루트. Rigidbody2D 와 트리거 콜라이더가 같이 있어야 한다.
+// [연결] RoguelikeEnemy.DropCoin 이 ObjectPool.Spawn 으로 꺼낸다.
+//        끌려오는 범위는 RoguelikePlayer.PickupRadius 에서 읽고, 경험치는 RoguelikePlayer.AddExp 로 넘긴다.
+// [설계] 범위를 코인이 그때그때 플레이어에게 물어본다.
+//        그래서 "픽업 범위 증가" 업그레이드를 찍어도 코인 쪽은 고칠 것이 없다.
 public class Coin : MonoBehaviour, IPoolable
 {
     [SerializeField] private int _expAmount = 10;
@@ -79,6 +86,7 @@ public class Coin : MonoBehaviour, IPoolable
         // 한 번에 여러 개를 줍는 일이 잦아서 간격을 넉넉히 준다
         AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.coinPickupSFX : null, 0.15f, 0.15f);
 
+        // 풀 출신이면 창고로 반납, 씬에 직접 놓인 코인이면 파괴
         _released = true;
         if (_fromPool && ObjectPool.Instance != null) ObjectPool.Instance.Release(gameObject);
         else Destroy(gameObject);
@@ -86,6 +94,7 @@ public class Coin : MonoBehaviour, IPoolable
 
     #region IPoolable
     // Awake/Start 는 최초 1회뿐이므로 재사용 시 초기화는 여기서 한다
+    // 지난번에 끌려가던 상태, 붙은 속도가 남아 있으면 떨어지자마자 날아가 버린다
     public void OnSpawnFromPool()
     {
         _fromPool = true;
@@ -99,6 +108,7 @@ public class Coin : MonoBehaviour, IPoolable
         if (_player == null) FindPlayer();
     }
 
+    // ObjectPool.Release 가 창고에 넣기 직전에 부른다. 남은 속도만 지워 둔다
     public void OnReturnToPool()
     {
         if (_rb != null) _rb.linearVelocity = Vector2.zero;

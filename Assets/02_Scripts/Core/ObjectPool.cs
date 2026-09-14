@@ -12,6 +12,15 @@ public interface IPoolable
     void OnReturnToPool();
 }
 
+// [하는 일] 적, 코인, 투사체처럼 자주 생기고 사라지는 오브젝트를 파괴하지 않고 꺼 두었다가 다시 꺼내 쓰는 창고(오브젝트 풀).
+// [붙이는 곳] RogueLike 씬의 ObjectPool 오브젝트. 인스펙터 Configs 에 프리팹과 미리 만들 개수를 넣는다.
+//          목록에 없는 프리팹도 Spawn 하면 그 자리에서 칸이 새로 생긴다.
+// [연결] EnemySpawner, RoguelikeEnemy(드롭 / 적 투사체), WeaponProjectile, WeaponBoomerang, WeaponBomb 가 Spawn 으로 꺼내고,
+//        RoguelikeEnemy, Coin, HealthPickup, Projectile, Bomb 이 Release 로 돌려준다.
+//        GameFlow 가 판을 다시 시작할 때 ReleaseAllActive 를 부른다.
+// [설계] Singleton<T> 를 물려받아 ObjectPool.Instance 로 어디서든 찾는다.
+//        또 DontDestroyOnLoad(씬을 다시 불러와도 파괴되지 않게 하는 표시)라서, 창고와 그 자식인 오브젝트들이 새 판까지 살아남는다.
+//        그래서 재시작 직전에 ReleaseAllActive 로 밖에 나와 있는 것을 전부 거둬들여야 한다.
 public class ObjectPool : Singleton<ObjectPool>
 {
     // 인스펙터에서 프리팹별 초기 개수를 설정하기 위한 클래스
@@ -115,6 +124,8 @@ public class ObjectPool : Singleton<ObjectPool>
     // 정리하지 않고 재시작하면 죽기 직전의 적과 코인이 새 판에 그대로 남아 있게 된다.
     public void ReleaseAllActive()
     {
+        // _instanceToPrefab 에는 이 창고가 만든 오브젝트가 전부 들어 있다.
+        // 그중 켜져 있는 것(= 밖에 나가 있는 것)만 골라 Release 와 같은 순서로 정리한다
         foreach (KeyValuePair<GameObject, GameObject> pair in _instanceToPrefab)
         {
             GameObject instance = pair.Key;

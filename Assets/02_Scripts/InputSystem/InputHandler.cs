@@ -4,6 +4,12 @@ using UnityEngine.InputSystem;
 
 namespace DungeonMaster.InputSystem
 {
+    // [하는 일] 키보드/패드 입력을 받아서 "이동", "공격", "상호작용" 이벤트로 바꿔 알려준다.
+    // [붙이는 곳] 플레이어 오브젝트. Player 에 [RequireComponent(typeof(InputHandler))] 가 있어서 같이 붙는다.
+    // [연결] Player / RoguelikePlayer 가 OnEnable 에서 이벤트를 구독(+=)하고 OnDisable 에서 해제(-=)한다.
+    //        로그라이크 씬은 공격이 자동이라 RoguelikePlayer 는 OnAttackAction 을 구독하지 않는다.
+    // [설계] 입력 장치를 아는 곳을 이 파일 하나로 모았다. 플레이어는 "이동 입력이 이만큼 왔다"만 받으면 된다.
+    //        그래서 키 설정이 바뀌어도 플레이어 코드는 고칠 필요가 없다.
     public class InputHandler : MonoBehaviour
     {
         // InputSystem_Action의 인스턴스를 저장하기 위한 변수
@@ -17,6 +23,8 @@ namespace DungeonMaster.InputSystem
         private InputAction _interactAction;
 
         // 이벤트 선언
+        // event 를 붙이면 바깥에서는 구독(+=)과 해제(-=)만 할 수 있다.
+        // 바깥에서 멋대로 Invoke 하거나 = 로 덮어써서 다른 구독자를 지워버리는 실수를 막아준다
         public event Action<Vector2> OnMoveAction;
         public event Action OnAttackAction;
         public event Action<bool> OnInteractAction;
@@ -66,6 +74,7 @@ namespace DungeonMaster.InputSystem
 
         private void OnDisable()
         {
+            // 한 번도 초기화되지 않은 채로 꺼지는 경우를 대비한다. 해제할 것이 없으면 그냥 나간다
             if (_inputActions == null) return;
 
             // OnDisable 에서는 가장 먼저 액션 시스템을 비활성화 => 안하면 메모리 누수 발생

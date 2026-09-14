@@ -2,11 +2,16 @@ using DungeonMaster.Character.Player;
 using UnityEngine;
 
 // 적이 가끔 떨구는 회복 아이템. 오브젝트 풀에서 재사용된다.
-// IPoolable 은 반드시 프리팹 루트에 있어야 한다(ObjectPool.Spawn 이 GetComponent 로 찾음).
 //
-// 경험치 코인과 달리 **자석으로 끌려오지 않는다.**
-// 저절로 딸려오면 그냥 시간이 지나면 회복되는 것과 같아서 아무 결정도 아니게 된다.
-// 직접 걸어가서 주워야 "적 사이를 뚫고 갈 만한가"를 판단하게 된다.
+// [하는 일] 플레이어가 밟으면 최대 체력의 일정 비율을 채워 주고 사라진다.
+//          오래 안 주우면 깜빡이다가 저절로 없어진다.
+// [붙이는 곳] HealthPickup 프리팹의 루트. SpriteRenderer 와 트리거 콜라이더가 같이 있어야 한다.
+//            IPoolable 은 반드시 프리팹 루트에 있어야 한다(ObjectPool.Spawn 이 GetComponent 로 찾음).
+// [연결] RoguelikeEnemy.DropHealth 가 EnemySO.healthDropChance 확률로 꺼낸다.
+//        회복은 플레이어의 Heal(), 소리는 AudioManager 로 낸다.
+// [설계] 경험치 코인과 달리 자석으로 끌려오지 않는다.
+//        저절로 딸려오면 그냥 시간이 지나면 회복되는 것과 같아서 아무 결정도 아니게 된다.
+//        직접 걸어가서 주워야 "적 사이를 뚫고 갈 만한가"를 판단하게 된다.
 public class HealthPickup : MonoBehaviour, IPoolable
 {
     [Header("회복량")]
@@ -23,16 +28,21 @@ public class HealthPickup : MonoBehaviour, IPoolable
     [SerializeField] private float _blinkInterval = 0.15f;
 
     private SpriteRenderer _spriteRenderer;
+    // 나온 시각(Time.time). 나이 = 지금 시각 - 이 값
     private float _spawnTime;
+    // 이미 먹었거나 사라졌는지. 같은 아이템이 두 번 처리되지 않게 막는다
     private bool _released;
+    // 풀에서 나온 개체인지. 씬에 직접 놓인 것은 Release 하면 안 사라진다
     private bool _fromPool;
 
     private void Awake()
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        // 풀 없이 Instantiate 로 만들어진 경우를 위해 여기서도 잰다
         _spawnTime = Time.time;
     }
 
+    // 매 프레임 나이를 재서, 수명이 다했으면 치우고 끝나기 직전이면 깜빡인다
     private void Update()
     {
         float age = Time.time - _spawnTime;
@@ -53,6 +63,8 @@ public class HealthPickup : MonoBehaviour, IPoolable
             return;
         }
 
+        // 남은 시간을 깜빡임 간격으로 나눈 몫이 짝수면 보이고, 홀수면 숨긴다.
+        // 몫은 간격마다 1씩 바뀌므로 켜짐과 꺼짐이 번갈아 온다
         _spriteRenderer.enabled = Mathf.FloorToInt(remain / _blinkInterval) % 2 == 0;
     }
 
@@ -71,6 +83,7 @@ public class HealthPickup : MonoBehaviour, IPoolable
         // 지나가다 낭비되면 아까우니까
         if (player.CurrHp >= player.MaxHp) return;
 
+        // 최대 체력의 _healPercent 만큼, 단 _minHeal 보다는 적지 않게 채운다
         player.Heal(Mathf.Max(_minHeal, player.MaxHp * _healPercent));
         AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.itemPickupSFX : null, 0.1f);
 
@@ -79,6 +92,8 @@ public class HealthPickup : MonoBehaviour, IPoolable
 
     // 풀 출신이면 반납, 아니면 파괴.
     // 씬에 직접 놓인 것을 Release 하면 풀이 모르는 오브젝트라 그냥 화면에 남는다
+    // 수명이 끝났을 때(Update)와 주웠을 때(OnTriggerStay2D) 부른다.
+    // 깜빡이다 꺼진 채로 창고에 들어가면 다음에 안 보이는 하트가 나오므로 그림을 다시 켜 둔다
     private void Remove()
     {
         _released = true;
@@ -101,6 +116,7 @@ public class HealthPickup : MonoBehaviour, IPoolable
         if (_spriteRenderer != null) _spriteRenderer.enabled = true;
     }
 
+    // ObjectPool.Release 가 창고에 넣기 직전에 부른다. 꺼진 그림을 다시 켜 둔다
     public void OnReturnToPool()
     {
         if (_spriteRenderer != null) _spriteRenderer.enabled = true;

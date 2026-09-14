@@ -10,10 +10,20 @@ namespace DungeonMaster.UI
 {
     // 죽은 뒤 암전 -> 결과 화면 -> 재시작.
     //
-    // 무한 생존이라 "얼마나 버텼는가"가 유일한 성과다.
-    // 그래서 결과 화면의 주인공은 생존 시간이고, 최고 기록과 나란히 보여준다.
-    //
-    // 화면이 멈춘(timeScale 0) 상태에서 돌아가므로 시간 계산은 전부 unscaled 를 쓴다.
+    // [하는 일] 플레이어가 죽으면 화면을 서서히 어둡게 한 뒤, 생존 시간 / 처치 수 / 레벨과 최고 기록을 보여준다.
+    //          생존 시간이 최고 기록보다 길면 새 기록으로 저장한다.
+    // [붙이는 곳] 씬의 Canvas/GameOverUI 오브젝트. 이 오브젝트 자체는 켜 둬야 한다.
+    //          꺼져 있으면 OnEnable 이 불리지 않아 사망 알림을 못 듣는다. 평소에 숨기는 것은 Panel 과 Dim 뿐이다.
+    //          인스펙터에서 Player 에 씬의 Warrior, Hud 에 Canvas/HUD, 나머지 칸에 결과 화면의 이미지 / 글자 / 버튼을 끌어다 놓는다.
+    // [연결] RoguelikePlayer : OnDied 를 듣는다. Level 을 읽는다
+    //        SurvivalHUD     : 생존 시간(ElapsedSeconds)과 00:00 표시 규칙(FormatTime)을 빌린다
+    //        RoguelikeEnemy  : TotalKills 로 처치 수를 읽는다
+    //        GameFlow        : 다시 하기 버튼의 실제 처리
+    // [설계] 무한 생존이라 "얼마나 버텼는가"가 유일한 성과다.
+    //        그래서 결과 화면의 주인공은 생존 시간이고, 최고 기록과 나란히 보여준다.
+    //        화면이 멈춘(timeScale 0) 상태에서 돌아가므로 시간 계산은 전부 unscaled 를 쓴다.
+    //        최고 기록은 PlayerPrefs 키 DM_BestTime / DM_BestKills / DM_BestLevel 에 저장한다.
+    //        (PlayerPrefs: 게임을 껐다 켜도 남는 작은 저장 공간. 이름표(키)를 붙여 숫자나 글자를 넣고 꺼낸다)
     public class GameOverUI : MonoBehaviour
     {
         [Header("참조")]
@@ -43,6 +53,7 @@ namespace DungeonMaster.UI
         private const string KeyBestKills = "DM_BestKills";
         private const string KeyBestLevel = "DM_BestLevel";
 
+        // 시작할 때 결과 화면을 숨기고, 다시 하기 버튼에 Restart 를 연결한다
         private void Awake()
         {
             CheckReferences();
@@ -58,6 +69,8 @@ namespace DungeonMaster.UI
             if (_restartButton != null) _restartButton.onClick.AddListener(Restart);
         }
 
+        // 켜질 때 사망 알림을 구독(+=)하고, 꺼질 때 해제(-=)한다.
+        // 짝을 맞춰 두어야 사라진 오브젝트에 알림이 가는 일이 없다
         private void OnEnable()
         {
             if (_player != null) _player.OnDied += HandleDied;
@@ -68,11 +81,14 @@ namespace DungeonMaster.UI
             if (_player != null) _player.OnDied -= HandleDied;
         }
 
+        // 플레이어가 죽으면 불린다. 연출이 여러 프레임에 걸치므로 코루틴으로 돌린다
         private void HandleDied()
         {
             StartCoroutine(ShowCo());
         }
 
+        // 암전 -> 잠깐 대기 -> 결과 표시.
+        // timeScale 이 0이라 WaitForSeconds 는 영원히 끝나지 않으므로 WaitForSecondsRealtime(실제 시간)을 쓴다
         private IEnumerator ShowCo()
         {
             // 1) 서서히 어두워진다
@@ -98,20 +114,25 @@ namespace DungeonMaster.UI
             if (_panel != null) _panel.SetActive(true);
         }
 
+        // 결과 글자를 채우고, 생존 시간이 최고 기록보다 길면 새 기록으로 저장한다
         private void Fill()
         {
             float elapsed = _hud != null ? _hud.ElapsedSeconds : 0f;
             int kills = RoguelikeEnemy.TotalKills;
             int level = _player != null ? _player.Level : 1;
 
+            // 저장하기 전에 읽어 둔 값이라, 신기록일 때도 bestTime 은 "이전" 최고 기록이다.
+            // 저장된 적이 없으면 두 번째 값(0)을 돌려준다
             float bestTime = PlayerPrefs.GetFloat(KeyBestTime, 0f);
             bool isNewRecord = elapsed > bestTime;
 
+            // 신기록 판정은 생존 시간 하나로만 한다. 처치 수와 레벨은 그 판의 값을 함께 적어 두는 것이다
             if (isNewRecord)
             {
                 PlayerPrefs.SetFloat(KeyBestTime, elapsed);
                 PlayerPrefs.SetInt(KeyBestKills, kills);
                 PlayerPrefs.SetInt(KeyBestLevel, level);
+                // Save: 지금 바로 파일에 쓴다. 안 부르면 게임이 갑자기 꺼질 때 기록이 날아갈 수 있다
                 PlayerPrefs.Save();
             }
 
@@ -135,6 +156,7 @@ namespace DungeonMaster.UI
             GameFlow.RestartScene();
         }
 
+        // 인스펙터 칸이 비어 있으면 조용히 안 뜨는 대신, 무엇을 끌어다 놓아야 하는지 콘솔에 알려준다
         private void CheckReferences()
         {
             if (_player == null)

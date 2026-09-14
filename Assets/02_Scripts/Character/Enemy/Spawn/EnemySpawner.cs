@@ -6,11 +6,18 @@ using UnityEngine.Tilemaps;
 namespace DungeonMaster.Spawn
 {
     // 뱀서라이크 스포너.
-    // 빈 오브젝트에 붙여서 사용.
     //
-    // 두 가지를 한다.
+    // [하는 일] 두 가지를 한다.
     //  1) 카메라 화면 바로 바깥에서 스폰 (플레이어를 항상 압박)
     //  2) 경과 시간에 따라 난이도를 올림 (무한 생존이므로 끝없이 어려워진다)
+    //  덤으로, 너무 멀리 뒤처진 적을 창고로 되돌려 자리를 비워 준다.
+    // [붙이는 곳] 빈 오브젝트에 붙여서 사용. RogueLike 씬에 있다.
+    //            바닥/벽 타일맵, 플레이어, 적 프리팹 목록을 인스펙터에서 넣어 준다.
+    // [연결] ObjectPool.Spawn 으로 적을 꺼내고, RoguelikeEnemy.ApplyDifficultyScale 로 강해진 배율을 넣는다.
+    //        뒤처진 적은 RoguelikeEnemy.DespawnFarAway 로 회수를 부탁한다.
+    // [설계] 모든 난이도 값은 한 줄로 계산된다: 경과 시간 -> 0~1 진행도(DifficultyT) -> 시작값과 끝값 사이.
+    //        그래서 곡선(_rampCurve) 하나만 바꾸면 스폰 주기, 마릿수, 상한, 능력치가 함께 오르는 모양이 바뀐다.
+    // [설계] 적 목록은 "언제부터(UnlockTime)"와 "얼마나 자주(Weight)"만 적는다. 새 적은 한 줄 추가로 끝난다.
     public class EnemySpawner : MonoBehaviour
     {
         // 어떤 적을 언제부터 내보낼지
@@ -32,6 +39,7 @@ namespace DungeonMaster.Spawn
 
         [Header("스폰 대상")]
         [SerializeField] private EnemyEntry[] _enemies;
+        // 스폰 링의 중심이자 거리 계산의 기준. 씬의 플레이어를 넣는다
         [SerializeField] private Transform _player;
 
         [Header("스폰 위치")]
@@ -43,9 +51,14 @@ namespace DungeonMaster.Spawn
         [Header("난이도 상승 (무한 생존)")]
         [Tooltip("이 시간(초)에 걸쳐 아래 값들이 시작값 -> 최대값으로 올라간다")]
         [SerializeField] private float _rampDuration = 600f;
+        // AnimationCurve 는 인스펙터에서 끌어서 모양을 바꾸는 그래프다.
+        // 가로축은 시간 진행(0 = 시작, 1 = _rampDuration 초), 세로축은 난이도(0~1)다.
+        // EaseInOut 은 처음과 끝은 천천히, 가운데는 빠르게 오른다
         [Tooltip("난이도가 올라가는 모양. 기본은 완만한 S자")]
         [SerializeField] private AnimationCurve _rampCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+        // 아래 Start / End 짝: Start 는 게임 시작 때 값, End 는 _rampDuration 초가 지났을 때 값이다.
+        // 그 사이는 곡선을 따라 옮겨 가고, 그 뒤로는 End 값에 머문다
         [Header("난이도 - 스폰 주기(초)")]
         [SerializeField] private float _intervalStart = 1.2f;
         [SerializeField] private float _intervalEnd = 0.18f;
@@ -67,6 +80,7 @@ namespace DungeonMaster.Spawn
         [Tooltip("몇 초마다 뒤처진 적을 확인할지")]
         [SerializeField] private float _despawnCheckInterval = 1f;
 
+        // 시작 배율은 항상 1배(EnemySO 에 적힌 값 그대로)라서 끝값만 정한다
         [Header("난이도 - 적 능력치 배율")]
         [SerializeField] private float _hpScaleEnd = 4f;
         [SerializeField] private float _damageScaleEnd = 2.5f;
@@ -78,17 +92,21 @@ namespace DungeonMaster.Spawn
         // 살아 있는 적 추적용(상한 검사에 필요)
         private readonly List<GameObject> _alive = new List<GameObject>();
 
+        // 시각 값은 전부 Time.time(게임 시작 후 흐른 초) 기준
         private float _lastSpawnTime;
         private float _startTime;
         private float _lastDespawnCheck;
+        // 화면 크기를 재는 데 쓰는 메인 카메라
         private Camera _camera;
 
         // 0 = 게임 시작, 1 = 최대 난이도
+        // 흐른 시간을 0~1로 바꾼 뒤 곡선에 넣어 모양을 입힌다. Mathf.Max(1f, ...) 는 0으로 나누기를 막는다
         public float DifficultyT
         {
             get { return _rampCurve.Evaluate(Mathf.Clamp01((Time.time - _startTime) / Mathf.Max(1f, _rampDuration))); }
         }
 
+        // 지금 시점의 실제 값들. Lerp(시작, 끝, t) 는 t 가 0 이면 시작값, 1 이면 끝값, 0.5 면 딱 중간이다
         public float CurrentInterval { get { return Mathf.Lerp(_intervalStart, _intervalEnd, DifficultyT); } }
         public int CurrentCountPerSpawn { get { return Mathf.RoundToInt(Mathf.Lerp(_countPerSpawnStart, _countPerSpawnEnd, DifficultyT)); } }
         public int CurrentMaxAlive { get { return Mathf.RoundToInt(Mathf.Lerp(_maxAliveStart, _maxAliveEnd, DifficultyT)); } }
@@ -105,6 +123,7 @@ namespace DungeonMaster.Spawn
 
         private void Update()
         {
+            // 매 프레임: 뒤처진 적 회수 확인 -> 스폰 주기가 됐으면 한 묶음 스폰
             DespawnCheck();
 
             if (Time.time < _lastSpawnTime + CurrentInterval) return;
@@ -121,6 +140,7 @@ namespace DungeonMaster.Spawn
 
             for (int i = 0; i < count; i++)
             {
+                // 동시 생존 상한에 닿으면 이번 묶음은 여기서 멈춘다
                 if (_alive.Count >= max) return;
                 SpawnOne();
             }
@@ -137,6 +157,8 @@ namespace DungeonMaster.Spawn
             if (Time.time < _lastDespawnCheck + _despawnCheckInterval) return;
             _lastDespawnCheck = Time.time;
 
+            // 스폰 링 반경(TryGetRingPosition 과 같은 계산)에 배수를 곱한 거리가 회수 기준이다.
+            // 거리 자체 대신 "거리의 제곱"끼리 비교한다. 제곱근 계산을 건너뛰어 가볍고, 크고 작음은 똑같다
             float halfHeight = _camera.orthographicSize;
             float halfWidth = halfHeight * _camera.aspect;
             float ringRadius = Mathf.Sqrt(halfWidth * halfWidth + halfHeight * halfHeight) + _ringPadding;
@@ -159,6 +181,8 @@ namespace DungeonMaster.Spawn
         #region 스폰 위치
         // 카메라가 비추는 영역을 감싸는 원 위에서 뽑는다.
         // 맵 가장자리 고정 스폰과 달리, 플레이어가 어디 있든 화면 밖에서 바로 다가온다.
+        // 원 위의 아무 각도나 골라 걸을 수 있는 칸인지 본다. 24번 해도 못 찾으면 false 를 돌려주고,
+        // SpawnOne 이 예비 경로(TryGetFallbackPosition)로 넘어간다
         private bool TryGetRingPosition(out Vector3 position)
         {
             position = Vector3.zero;
@@ -209,6 +233,7 @@ namespace DungeonMaster.Spawn
         }
 
         // 바닥이면서, 상하좌우 중 하나라도 바닥이 아닌 셀 = 가장자리
+        // 맵은 게임 중에 바뀌지 않으므로 Start 에서 한 번만 전부 찾아 목록에 담아 둔다
         private void CacheFallbackPoints()
         {
             _fallbackPoints.Clear();
@@ -252,6 +277,7 @@ namespace DungeonMaster.Spawn
         #region 스폰
         private void SpawnOne()
         {
+            // 순서: 어떤 적을 -> 어디에 -> 꺼내서 -> 목록에 올리고 -> 난이도 배율 넣기
             GameObject prefab = PickEnemy();
             if (prefab == null) return;
 
@@ -269,11 +295,14 @@ namespace DungeonMaster.Spawn
 
             // 경과 시간에 따른 능력치 배율 적용.
             // Instantiate 시점에 Awake 가 이미 끝났으므로 여기서 체력을 다시 세팅해도 안전하다.
+            // 풀에서 꺼낸 경우도 OnSpawnFromPool 이 이미 끝난 뒤라서 마찬가지다.
             var re = enemy.GetComponent<DungeonMaster.Character.Enemy.RoguelikeEnemy>();
             if (re != null) re.ApplyDifficultyScale(CurrentHpScale, CurrentDamageScale);
         }
 
         // 해금 시간이 지난 적들 중에서 가중치로 하나 뽑는다
+        // 뽑는 방법: 가중치를 이어 붙인 막대를 떠올리고, 그 막대 위 아무 지점(roll)이나 찍는다.
+        // 찍힌 곳이 누구 칸인지 앞에서부터 빼 가며 찾는다. 가중치 2인 적은 칸이 두 배 넓어서 두 배 자주 뽑힌다
         private GameObject PickEnemy()
         {
             if (_enemies == null || _enemies.Length == 0)
@@ -310,6 +339,7 @@ namespace DungeonMaster.Spawn
 
         #region 디버그
         // 플레이 중에 이 오브젝트를 선택하면 스폰 링이 표시됨
+        // 주황 원 = 스폰 링, 빨간 원 = 이보다 가까우면 스폰하지 않는 거리
         private void OnDrawGizmosSelected()
         {
             if (_camera == null) _camera = Camera.main;

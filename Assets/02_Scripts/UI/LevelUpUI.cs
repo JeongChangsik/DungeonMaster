@@ -9,6 +9,20 @@ using System.Collections.Generic;
 namespace DungeonMaster.UI
 {
     // 레벨업 -> 시간 정지 -> 카드 선택 -> 시간 재개
+    //
+    // [하는 일] 플레이어가 레벨업하면 게임을 멈추고 업그레이드 카드를 띄운다.
+    //          고른 카드를 적용하고, 카드마다 몇 레벨까지 올렸는지 기억한다.
+    // [붙이는 곳] LevelUpUI 프리팹(03_Prefabs/LevelUpUI)으로 만들어 씬의 Canvas 아래에 둔다.
+    //          인스펙터에서 Player 에 씬의 Warrior, Card Buttons 에 카드 버튼들(각각 LevelUpCard 가 붙어 있어야 함),
+    //          Pool 에 카드 후보 UpgradeSO 에셋들, Starting Upgrades 에 시작 무기 에셋을 넣는다.
+    // [연결] RoguelikePlayer : OnLevelUpAction 을 듣는다. 멈추기 전에 CancelHitStop, 다 고르면 ResumeExpGain 을 부른다
+    //        UpgradeSO       : IsAvailable 로 후보를 거르고, Apply 로 실제 효과를 준다
+    //        LevelUpCard     : 카드 한 장의 올라오기 / 뒤집기 연출을 맡는다
+    //        PauseMenuUI     : IsShowing 을 물어본다 (메뉴를 닫을 때 시간을 다시 흐르게 해도 되는지)
+    //        BuildHUD        : OnUpgradesChanged 를 듣고 CopyAcquired 로 고른 목록을 받아간다
+    // [설계] Time.timeScale(게임 시간의 빠르기. 0 = 멈춤)을 건드리는 주인이 넷 있다 — 피격 히트스톱, 이 카드, 사망, 일시정지 메뉴.
+    //        히트스톱은 잠깐 뒤 스스로 시간을 1로 되돌리므로, 카드를 띄우기 직전에 CancelHitStop 으로 그 권한을 뺏는다.
+    //        시간이 멈춘 동안의 카드 연출은 LevelUpCard 가 unscaled 시간(멈춤과 상관없이 흐르는 실제 시간)으로 움직인다.
     public class LevelUpUI : MonoBehaviour
     {
         [SerializeField] private RoguelikePlayer _player;
@@ -78,6 +92,7 @@ namespace DungeonMaster.UI
 
             Debug.Log($"업그레이드 적용: {upgrade.Title} Lv.{level}");
 
+            // 듣고 있는 쪽(BuildHUD)에 목록이 바뀌었다고 알린다. 아무도 안 듣고 있으면 null 이라 부르지 않는다
             if (OnUpgradesChanged != null) OnUpgradesChanged();
         }
 
@@ -113,7 +128,8 @@ namespace DungeonMaster.UI
             // 순서 주의: 반드시 패널을 먼저 켜야 한다.
             // 부모가 꺼져 있으면 자식 카드도 꺼진 것으로 취급되어 Awake가 실행되지 않고,
             // 그 상태에서 SetData를 부르면 초기화 전이라 그냥 무시된다
-            // 피격 히트스톱이 돌고 있으면 소유권을 뺏어온다.
+            //
+            // 그보다 먼저, 피격 히트스톱이 돌고 있으면 시간 소유권을 뺏어온다.
             // 안 그러면 0.05초 뒤에 히트스톱이 끝나면서 시간을 1로 되돌려서
             // 카드가 떠 있는데도 게임이 계속 돌아간다
             if (_player != null) _player.CancelHitStop();
@@ -169,6 +185,7 @@ namespace DungeonMaster.UI
             foreach (UpgradeSO upgrade in _pool)
             {
                 if (upgrade == null) continue;
+                // IsAvailable: 아직 얻지 않은 무기의 강화 카드처럼, 지금은 뽑히면 안 되는 카드를 거른다
                 if (GetLevel(upgrade) < upgrade.MaxLevel && upgrade.IsAvailable(_player)) _candidates.Add(upgrade);
             }
 
@@ -210,6 +227,7 @@ namespace DungeonMaster.UI
 
         private void OnCardSelected(int index)
         {
+            // 카드 고르는 소리. 두 번째 값 0 = 음 높이를 흔들지 않고 매번 같은 소리로 낸다
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.cardSelectSFX : null, 0f);
             if (index < _drawn.Count) LevelUpUpgrade(_drawn[index]);
             ShowNext();   // 대기 중인 레벨업이 남아 있으면 이어서, 없으면 Close()

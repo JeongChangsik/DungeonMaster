@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace DungeonMaster.Character.Player
 {
+    // [하는 일] 로그라이크(뱀서라이크) 씬에서 쓰는 전사 캐릭터. 전사만의 스탯(WarriorSO)과 방어력을 담당한다.
+    // [붙이는 곳] RogueLike 씬의 플레이어 오브젝트.
+    // [연결] 부모 RoguelikePlayer 가 경험치, 무적 시간, 사망 연출, 스탯 강화를 맡는다.
+    //        '방어력 증가' 카드는 RoguelikePlayer.ApplyStatUpgrade -> AddDefense(여기서 override) 로 들어온다.
+    // [설계] 구 GamePlay 씬의 Warrior.cs 를 복사해 만든 파일이다. Warrior.cs 는 건드리지 않는 규칙이라
+    //        뱀서용 차이(무기가 공격, 방어력 상한 등)는 전부 이쪽에만 넣었다.
     public class RoguelikeWarrior : RoguelikePlayer
     {
         [Header("적 검출 설정")]
@@ -48,6 +54,7 @@ namespace DungeonMaster.Character.Player
         #region 공격 및 피격 처리
         // 로그라이크 씬의 공격은 전부 WeaponRoot 아래 무기들이 알아서 한다.
         // 이 메서드는 부모의 자동 공격 타이머가 부르는 자리라 비워 둔다
+        // (부모 Player 에서 abstract 로 선언돼 있어서, 비어 있더라도 override 는 반드시 적어야 한다)
         protected override void Attack()
         {
         }
@@ -83,6 +90,8 @@ namespace DungeonMaster.Character.Player
 
             if(colliders.Length > 0) CameraShake.Instance.Shake();
 
+            // 구 Warrior 는 _warriorSO.attackDamage 를 그대로 쓰지만,
+            // 여기서는 강화(보너스, 배율)가 반영된 AttackDamage 프로퍼티를 쓴다
             foreach (var collider in colliders)
             {
                 collider.GetComponent<IDamagable>()?.TakeDamage(AttackDamage);

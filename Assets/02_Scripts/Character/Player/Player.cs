@@ -7,6 +7,24 @@ using UnityEngine.UI;
 
 namespace DungeonMaster.Character.Player
 {
+    // [하는 일] 모든 플레이어 캐릭터의 공통 부모. 체력, 이동, 피격, 사망, 스탯 강화처럼 직업과 상관없는 부분을 담는다.
+    // [붙이는 곳] 직접 붙이지 않는다. abstract(추상) 클래스라 그 자체로는 만들 수 없고, 자식 클래스를 붙인다.
+    // [연결] 자식은 둘로 나뉜다.
+    //          - Warrior              : 구 GamePlay 씬의 전사 (Player 를 바로 상속)
+    //          - RoguelikePlayer      : 뱀서라이크 씬의 공통 부모 (경험치, 무적, 사망 연출) -> RoguelikeWarrior
+    //        InputHandler 의 이벤트를 듣고, IDamagable 약속을 지켜서 적에게 맞을 수 있다.
+    //        레벨업 카드(PlayerStatUpgradeSO)는 RoguelikePlayer.ApplyStatUpgrade 를 거쳐 아래의 Add... 함수들을 부른다.
+    // [설계] 스탯은 "기본값 + 보너스" 로 나눴다. 인스펙터에 적은 기본값은 그대로 두고, 강화분만 따로 쌓는다.
+    //        보너스는 0, 배율은 1 에서 시작하므로 강화를 한 번도 안 받는 구 GamePlay 씬의 Warrior 는
+    //        예전과 숫자가 완전히 똑같이 동작한다.
+    //
+    // abstract / virtual / override 간단 정리
+    //   abstract : "자식이 반드시 채워야 하는 빈칸". 부모에는 내용이 없다 (Attack)
+    //   virtual  : "기본 내용은 있지만 자식이 바꿔도 되는 칸" (Awake, TakeDamage, Die 등)
+    //   override : 자식이 위의 칸을 자기 내용으로 바꿀 때 붙인다. base.함수() 로 부모 내용도 이어서 부를 수 있다
+    //
+    // [RequireComponent] 는 "이 스크립트를 붙이면 아래 컴포넌트도 반드시 같이 있어야 한다"는 표시다.
+    // 없으면 유니티가 자동으로 붙여주고, 실수로 지우는 것도 막아준다.
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(SpriteRenderer))]
@@ -19,8 +37,10 @@ namespace DungeonMaster.Character.Player
         [SerializeField] protected float _currHp = 100f;
         [SerializeField] protected float _moveSpeed = 5f;
         [SerializeField] protected float _attackDamage = 20f;
+        // _attackCooldown 은 초 단위. 공격과 공격 사이의 최소 간격이다
         [SerializeField] protected float _attackCooldown = 0.5f;
 
+        // 따로 저장하는 값이 아니라, 물어볼 때마다 "체력이 0 이하인가"를 계산해서 돌려준다
         protected bool _isDead => _currHp <= 0f;
         #endregion
 
@@ -28,6 +48,8 @@ namespace DungeonMaster.Character.Player
         // 위의 SerializeField 값은 "기본값"으로 그대로 두고, 강화분만 여기에 누적한다.
         // 이렇게 해야 인스펙터/프리팹에 저장된 값이 살아있고, 보정치가 0/1인 동안은
         // 기존 씬(GamePlay)의 동작이 수치적으로 완전히 동일하다.
+        // _bonus... : 더하는 값. 0 이면 강화 없음
+        // _mul...   : 곱하는 배율. 1 이면 강화 없음 (1.2 = 20% 증가)
         protected float _bonusMaxHp;
         protected float _bonusMoveSpeed;
         protected float _bonusAttackDamage;
@@ -70,6 +92,9 @@ namespace DungeonMaster.Character.Player
         protected float lastAttackTime = 0f;
 
         #region 유니티 생명주기
+        // 오브젝트가 생길 때 한 번 불린다. 체력을 채우고 필요한 컴포넌트를 찾아 둔다.
+        // 참고: RoguelikePlayer 는 이 Awake 를 base 로 부르지 않고 따로 다시 쓴다.
+        //       로그라이크 씬에는 아래에서 찾는 "Canvas" 의 3번째 Image 나 "Arm" 오브젝트가 없기 때문이다.
         protected virtual void Awake()
         {
             Debug.Log($"Player::Awake()");
@@ -101,6 +126,9 @@ namespace DungeonMaster.Character.Player
             // Transform는 GetComponent처럼 가져오는 방식이 아닌 직접 접근할 수 있는 shorthand를 유니티에서 지원함
         }
 
+        // 켜질 때 입력 이벤트를 구독하고, 꺼질 때 해제한다.
+        // 해제하지 않으면 오브젝트가 사라진 뒤에도 InputHandler 가 이 함수를 불러 에러가 날 수 있다.
+        // virtual 이라 RoguelikePlayer 는 "공격 입력은 빼고 구독하는" 버전으로 바꿔 쓴다
         protected virtual void OnEnable()
         {
             _inputHandler.OnMoveAction += OnMove;
@@ -123,6 +151,8 @@ namespace DungeonMaster.Character.Player
 
         #region 공통 메서드
         // Facing 처리
+        // 스프라이트를 좌우로 뒤집고 무기 팔(Arm)도 같이 돌린다.
+        // RoguelikePlayer 에는 Arm 이 없어서 스프라이트만 뒤집는 버전으로 override 한다
         protected virtual void FlipDirection(bool facingRight)
         {
             if (facingRight)
@@ -200,10 +230,18 @@ namespace DungeonMaster.Character.Player
         #endregion
         
         #region 추상 메서드
+        // 직업마다 공격 방식이 달라서 부모는 내용을 비워 두고 자식에게 맡긴다.
+        // abstract 라서 자식 클래스는 이 함수를 반드시 override 해야 컴파일된다
         protected abstract void Attack();
         #endregion
 
         #region 가상 메서드
+        // IDamagable 약속을 지키는 함수. 적이나 PlayerEditor 의 테스트 버튼이 부른다.
+        // 체력을 깎고, HP바를 고치고, 피격 애니메이션을 틀고, 0 이하면 Die() 를 부른다.
+        // 로그라이크 전사가 맞으면 이렇게 차례로 내려온다:
+        //   RoguelikeWarrior.TakeDamage (방어력 빼기)
+        //   -> RoguelikePlayer.TakeDamage (무적 검사, 소리, 흔들림, 히트스톱)
+        //   -> 여기 Player.TakeDamage (실제로 체력 깎기)
         public virtual void TakeDamage(float damage)
         {
             if(_isDead) return;
@@ -254,6 +292,8 @@ namespace DungeonMaster.Character.Player
             ApplyMoveVelocity();
         }
 
+        // 기본 공격력을 올린다. 지금은 PlayerStat 에 공격력 항목이 없어서 이 함수를 부르는 카드가 없다.
+        // 뱀서라이크의 무기 피해는 이것 대신 RoguelikePlayer 의 WeaponDamageMul 로 올린다
         public void AddAttackDamage(float flat, float percent = 0f)
         {
             _bonusAttackDamage += flat;
@@ -266,6 +306,7 @@ namespace DungeonMaster.Character.Player
             _mulCooldown = Mathf.Max(0.2f, _mulCooldown - percent);   // 최대 80% 감소까지만
         }
 
+        // 체력을 회복한다. 최대 체력을 넘지 않는다. RoguelikePlayer 의 초당 회복(TickRegen)이 부른다
         public void Heal(float amount)
         {
             if (_isDead) return;
@@ -275,6 +316,8 @@ namespace DungeonMaster.Character.Player
         }
         #endregion
 
+        // 체력이 0 이하가 되면 TakeDamage 가 부른다. 부모는 체력을 0 으로 맞추고 로그만 남긴다.
+        // RoguelikePlayer 가 override 해서 시간 정지와 쓰러지는 연출을 덧붙인다
         protected virtual void Die()
         {
             _currHp = 0f;

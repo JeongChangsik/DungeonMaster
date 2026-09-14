@@ -16,6 +16,29 @@ namespace DungeonMaster.Character.Enemy
     //  - 여기서 필요한 건 상태 1개뿐이라 FSM, 탐색(OverlapCircle+LINQ), 공격이 전부 불필요
     //  - GamePlay 씬이 쓰는 Enemy.cs / Swampy.cs를 한 줄도 건드리지 않기 위함
     // 스탯 데이터(EnemySO)만 재사용한다.
+    //
+    // [하는 일] 뱀서라이크 적 한 마리. 플레이어를 쫓아가고, 맞으면 번쩍이며 밀려나고, 죽으면 코인을 떨군다.
+    //          EnemySO.behavior 값에 따라 추격형 / 돌진형 / 원거리형 / 자폭형 중 하나로 움직인다.
+    // [붙이는 곳] RL_Goblin, RL_Swampy, RL_OrcShaman 같은 뱀서라이크 적 프리팹의 루트(맨 위 오브젝트).
+    // [연결] EnemySpawner 가 ObjectPool.Spawn 으로 꺼낸 뒤 ApplyDifficultyScale 로 "시간이 흐른 만큼 강해진 배율"을 넣어 준다.
+    //        무기들은 IDamagable.TakeDamage 로 이 적을 때린다.
+    //        죽으면 Coin / HealthPickup 을 떨구고, 처치 수(TotalKills)는 SurvivalHUD / GameOverUI 가 읽는다.
+    // [설계] 행동 유형마다 클래스를 따로 만들지 않고, 한 클래스 안에서 behavior 값으로 switch 한다.
+    //        새 적은 코드 없이 EnemySO 파일과 프리팹만 만들면 된다.
+    // [설계] 오브젝트 풀을 쓴다. 죽어도 파괴하지 않고 창고(ObjectPool)에 넣었다가 다음에 다시 꺼내 쓴다.
+    //        Awake/Start 는 처음 한 번만 불리므로 "새로 나온 것처럼" 되돌리는 일은 OnSpawnFromPool 이 맡는다.
+    //
+    // 파일 안내 (위에서 아래 순서)
+    //  1) 인스펙터 설정값과 내부 상태 변수
+    //  2) 유니티 생명주기: Awake, Start, FixedUpdate(물리 틱마다 행동 결정)
+    //  3) 적끼리 밀어내기
+    //  4) 행동 유형: 추격 / 돌진 / 원거리 / 자폭
+    //  5) 접촉 데미지(OnTriggerStay2D)
+    //  6) 피격(TakeDamage), 멀어진 적 회수, 난이도 배율 적용
+    //  7) 타격 연출: 데미지 숫자, 번쩍임, 넉백, 체력바
+    //  8) 사망: Die, 사망 연출, Remove
+    //  9) IPoolable: 풀에서 꺼낼 때 / 넣을 때
+    // 10) 드롭: 회복 아이템, 코인
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(SpriteRenderer))]
@@ -29,6 +52,7 @@ namespace DungeonMaster.Character.Enemy
         [Tooltip("가끔 떨구는 회복 아이템. 확률은 EnemySO.healthDropChance 로 조절")]
         [SerializeField] private GameObject _dropHealth;
 
+        // 아래 설정값 단위: 시간은 초, 거리는 유니티 단위(바닥 타일 한 칸 = 1)
         [Header("타격 연출")]
         [Tooltip("피격 시 번쩍이는 시간")]
         [SerializeField] private float _flashDuration = 0.08f;
@@ -56,6 +80,8 @@ namespace DungeonMaster.Character.Enemy
         [SerializeField] private float _separationInterval = 0.12f;
         [Tooltip("한 번에 고려할 이웃 수 상한. 수백 마리가 몰려도 비용이 일정하게 유지된다")]
         [SerializeField] private int _separationMaxNeighbors = 8;
+        // 밀어낼 상대를 찾을 레이어. 보통 적 레이어 하나만 켠다.
+        // Nothing 으로 비워 두면 아무도 안 잡혀서 밀어내기가 꺼진 것과 같다
         [SerializeField] private LayerMask _separationLayer;
 
         [Header("사망 연출")]
@@ -76,6 +102,7 @@ namespace DungeonMaster.Character.Enemy
         private bool _isDead;
 
         // 경과 시간에 따른 난이도 배율. 스포너가 생성 직후에 내려준다
+        // 1이면 EnemySO 에 적힌 값 그대로, 2면 두 배다
         private float _hpScale = 1f;
         private float _damageScale = 1f;
 
@@ -85,13 +112,18 @@ namespace DungeonMaster.Character.Enemy
         private bool _fromPool;
 
         // 행동 유형별 상태
+        // "시각"은 Time.time(게임 시작 후 흐른 초) 기준이다. 알람 시계처럼
+        // "지금 + 기다릴 시간"을 적어 두고, Time.time 이 그 값을 넘으면 때가 됐다고 본다
         private float _nextChargeTime;      // 다음 돌진 가능 시각
         private float _chargeStateEnd;      // 현재 단계(준비/돌진)가 끝나는 시각
         private bool _isWindingUp;          // 돌진 준비 중(멈춰서 기 모으는 중)
         private bool _isCharging;           // 돌진 중
+        // 돌진 방향. 돌진하는 동안에는 바꾸지 않아서 옆으로 피하면 비껴간다
         private Vector2 _chargeDir;
+        // 원거리형의 다음 발사 가능 시각
         private float _nextShootTime;
         private bool _isFusing;             // 자폭 준비 중(부풀어오르는 중)
+        // 자폭형이 터지는 시각
         private float _fuseEnd;
 
         // 넉백. 이 시각까지는 스스로 움직이지 않고 밀려나는 속도를 유지한다
@@ -103,15 +135,21 @@ namespace DungeonMaster.Character.Enemy
         private float _nextSeparationTime;
 
         // 검색 결과를 담을 리스트. static 으로 공유해서 매번 새로 만들지 않는다
+        // 적 수백 마리가 리스트 하나를 돌려 써도 괜찮다. 유니티 스크립트는 한 번에 한 마리씩
+        // 차례로 실행되므로, 한 마리가 쓰는 도중에 다른 적이 끼어들지 않는다
         private static readonly System.Collections.Generic.List<Collider2D> _sepHits =
             new System.Collections.Generic.List<Collider2D>(32);
+        // 검색 조건(트리거도 포함할지, 어느 레이어를 볼지). 처음 쓸 때 한 번 만든다
         private ContactFilter2D _sepFilter;
         private bool _sepFilterReady;
 
         // 이번 판에서 죽인 적의 수. SurvivalHUD 가 판을 시작할 때 0으로 되돌린다.
         // 죽는 곳이 Die() 한 군데뿐이라 여기서 세는 것이 가장 단순하다
+        // static 이라서 적마다 따로 있는 게 아니라 RoguelikeEnemy 전체에 딱 하나 있는 숫자다.
+        // 그래서 다른 스크립트가 적 하나를 찾지 않고도 RoguelikeEnemy.TotalKills 로 바로 읽는다
         public static int TotalKills;
 
+        // 난이도 배율까지 곱한 실제 값. EnemySO 원본 숫자는 건드리지 않는다
         public float MaxHp { get { return _enemySO.maxHp * _hpScale; } }
         public float ContactDamage { get { return _enemySO.attackDamage * _damageScale; } }
 
@@ -124,8 +162,10 @@ namespace DungeonMaster.Character.Enemy
 
         // 타격 연출용
         private MMHealthBar _healthBar;     // 없으면 체력바를 안 그릴 뿐, 동작에는 지장 없음
+        // 프리팹 원래 색과 크기. 번쩍임, 부풀기, 사망 연출이 끝나면 이 값으로 되돌린다
         private Color _baseColor;
         private Vector3 _baseScale;
+        // 돌고 있는 번쩍임 코루틴. 또 맞았을 때 이전 것을 멈추려고 기억해 둔다
         private Coroutine _flashRoutine;
 
         // 애니메이션 해시(RLSwampyAnim: IsWalk(bool), Hit(trigger))
@@ -139,6 +179,7 @@ namespace DungeonMaster.Character.Enemy
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _animator = GetComponent<Animator>();
 
+            // 연출 뒤에 되돌아갈 "원래 모습"을 가장 처음에 한 번만 기억해 둔다
             _healthBar = GetComponent<MMHealthBar>();
             _baseColor = _spriteRenderer.color;
             _baseScale = transform.localScale;
@@ -178,6 +219,8 @@ namespace DungeonMaster.Character.Enemy
             // 넉백이 화면상 전혀 보이지 않는다
             if (Time.time < _knockbackEnd) return;
 
+            // 행동 유형에 맞는 Tick 함수가 이번 틱의 속도(_rb.linearVelocity, 1초에 움직일 양)를 정한다.
+            // 속도만 정해 두면 실제로 위치를 옮기는 일은 물리 엔진이 알아서 한다
             switch (_enemySO.behavior)
             {
                 case EnemyBehavior.Charger: TickCharger(); break;
@@ -196,6 +239,9 @@ namespace DungeonMaster.Character.Enemy
         // 그래서 전부 플레이어 좌표 한 점으로 수렴해 실측 거리가 0.00~0.05 였고,
         // 그 결과 반경 1.5 를 도는 공전 칼날이 단 한 마리도 때리지 못했다.
         // (겉보기에도 수십 마리가 한 마리처럼 보인다)
+        //
+        // FixedUpdate 에서 행동이 정해진 뒤에 불린다.
+        // 이미 정한 속도에 "옆에 붙은 적에게서 멀어지는 힘"을 더해 준다
         private void ApplySeparation()
         {
             if (_separationWeight <= 0f || _rb == null) return;
@@ -217,6 +263,8 @@ namespace DungeonMaster.Character.Enemy
                 _rb.linearVelocity = _rb.linearVelocity.normalized * max;
         }
 
+        // 반경 안의 이웃들을 찾아서, 각각에게서 멀어지는 방향을 평균 내 돌려준다.
+        // 결과 길이는 0~1 사이다. 이웃이 가까울수록, 한쪽으로 몰려 있을수록 1에 가깝다
         private Vector2 ComputeSeparation()
         {
             if (!_sepFilterReady)
@@ -261,11 +309,14 @@ namespace DungeonMaster.Character.Enemy
         #endregion
 
         #region 행동 유형
+        // 나에게서 플레이어 쪽을 가리키는 길이 1짜리 방향
         private Vector2 DirectionToTarget
         {
             get { return ((Vector2)_target.position - _rb.position).normalized; }
         }
 
+        // 가는 방향에 맞춰 그림을 좌우로 뒤집는다.
+        // 바로 위나 아래로 갈 때(x 가 거의 0)는 그대로 둬야 좌우로 깜빡거리지 않는다
         private void FaceTarget(Vector2 dir)
         {
             if (Mathf.Abs(dir.x) > 0.01f) _spriteRenderer.flipX = dir.x < 0f;
@@ -280,6 +331,9 @@ namespace DungeonMaster.Character.Enemy
         }
 
         // 돌진형: 가까워지면 잠깐 멈췄다가(피할 여유) 빠르게 돌진
+        // 걷기 -> 준비(_isWindingUp) -> 돌진(_isCharging) -> 다시 걷기를 차례로 돈다.
+        // 단계가 셋뿐이라 FSM 없이 bool 두 개와 "끝나는 시각" 하나로 충분하다.
+        // 아래 코드는 지금 단계가 뒤쪽인 것부터 검사한다(돌진 중 -> 준비 중 -> 평소)
         private void TickCharger()
         {
             // 1) 돌진 중
@@ -345,6 +399,8 @@ namespace DungeonMaster.Character.Enemy
             float preferred = _enemySO.preferredDistance;
 
             // 너무 가까우면 물러나고, 너무 멀면 다가가고, 적당하면 멈춘다
+            // 0.8~1.2배의 여유 구간을 두는 이유: 기준이 딱 한 값이면
+            // 그 선을 넘었다 말았다 하면서 한 발 앞, 한 발 뒤로 덜덜 떨게 된다
             if (dist < preferred * 0.8f)      _rb.linearVelocity = -dir * _enemySO.moveSpeed;
             else if (dist > preferred * 1.2f) _rb.linearVelocity = dir * _enemySO.moveSpeed;
             else                              _rb.linearVelocity = Vector2.zero;
@@ -367,6 +423,7 @@ namespace DungeonMaster.Character.Enemy
                 _rb.linearVelocity = Vector2.zero;
 
                 // 부풀어오르는 연출. 멎어 있는 것만으로는 눈에 안 띈다
+                // t 는 준비를 시작한 순간 0, 터지는 순간 1이다. 그만큼 커지고 주황색에 가까워진다
                 float t = Mathf.InverseLerp(_fuseEnd - _enemySO.bombFuse, _fuseEnd, Time.time);
                 transform.localScale = _baseScale * (1f + 0.35f * t);
                 if (_spriteRenderer != null)
@@ -390,6 +447,7 @@ namespace DungeonMaster.Character.Enemy
             AudioManager.Play(AudioManager.Data != null ? AudioManager.Data.enemyChargeSFX : null, 0.25f, 0.25f);
         }
 
+        // 자폭형의 준비 시간이 다 지나면 TickBomber 가 부른다
         private void Detonate()
         {
             _isFusing = false;
@@ -412,6 +470,9 @@ namespace DungeonMaster.Character.Enemy
             Die();
         }
 
+        // 원거리형이 발사 주기마다 부른다. 투사체는 풀이 있으면 꺼내 쓰고, 없으면 새로 만든다.
+        // Launch 인자: 관통 0 = 처음 닿은 대상에서 사라짐,
+        // -90 = 그림 방향을 날아가는 방향에 맞추는 회전 각도(투사체 그림이 위쪽을 보고 그려져 있다고 보고 돌린다)
         private void Shoot(Vector2 dir)
         {
             if (_enemySO.projectilePrefab == null) return;
@@ -449,6 +510,7 @@ namespace DungeonMaster.Character.Enemy
 
             _currHp -= damage;
 
+            // 맞을 때마다: 숫자 모으기 -> 번쩍 -> 뒤로 밀림 -> 체력바 갱신 -> 효과음
             AccumulateDamageNumber(damage);
             Flash();
             Knockback();
@@ -479,6 +541,8 @@ namespace DungeonMaster.Character.Enemy
 
         // 스포너가 Instantiate 직후에 호출한다.
         // 이 시점엔 Awake 가 이미 끝나 _currHp 가 세팅되어 있으므로 다시 계산해 준다.
+        // 풀에서 꺼낸 경우도 같다. OnSpawnFromPool 이 먼저 체력을 채우고, 여기서 배율을 곱해 다시 채운다.
+        // 0.1배 아래로는 못 내려가게 막아서, 실수로 0이 들어와도 "체력 0인 적"이 생기지 않는다
         public void ApplyDifficultyScale(float hpScale, float damageScale)
         {
             _hpScale = Mathf.Max(0.1f, hpScale);
@@ -518,6 +582,8 @@ namespace DungeonMaster.Character.Enemy
             ShowDamageNumber(amount);
         }
 
+        // 적 머리 위에 숫자를 띄워 달라고 "이벤트"를 보낸다.
+        // 이벤트는 방송과 같다. 적은 누가 듣는지 모르고 외치기만 하고, 듣고 있던 쪽이 숫자를 만든다
         private void ShowDamageNumber(float damage)
         {
             if (!_showDamageNumber) return;
@@ -538,6 +604,7 @@ namespace DungeonMaster.Character.Enemy
             _flashRoutine = StartCoroutine(FlashCo());
         }
 
+        // 붉게 물들임 -> _flashDuration 초 기다림 -> 원래 색으로
         private IEnumerator FlashCo()
         {
             _spriteRenderer.color = _flashColor;
@@ -566,6 +633,7 @@ namespace DungeonMaster.Character.Enemy
             _knockbackEnd = Time.time + _knockbackDuration;
         }
 
+        // 머리 위 체력바(MMHealthBar)에 지금 체력 / 최소 0 / 최대 체력을 넘겨 다시 그리게 한다
         private void UpdateHealthBar()
         {
             if (_healthBar == null) return;
@@ -573,10 +641,13 @@ namespace DungeonMaster.Character.Enemy
         }
         #endregion
 
+        // 체력이 0 이하가 되면 TakeDamage 가, 자폭하면 Detonate 가 부른다.
+        // 처치 수 +1 -> 마지막 숫자 -> 소리 -> 코인/회복 드롭 -> 사라지는 연출 순서로 진행한다
         private void Die()
         {
             _isDead = true;
             _currHp = 0f;
+            // 모든 적이 함께 쓰는 static 카운터를 1 올린다
             TotalKills++;
 
             // 마지막 타격은 반드시 보여준다. 죽인 한 방이 안 보이면 허전하다
@@ -596,6 +667,8 @@ namespace DungeonMaster.Character.Enemy
             else Remove();
         }
 
+        // Die 에서 시작하는 코루틴. 매 프레임 크기와 투명도를 조금씩 바꾸고, 다 끝나면 Remove 로 치운다.
+        // "yield return null" 은 "여기서 멈췄다가 다음 프레임에 이어서 하기"라는 뜻이다
         private IEnumerator DeathPopCo()
         {
             // 체력바가 0인 채로 같이 쪼그라들면 지저분하므로 먼저 끈다
@@ -630,6 +703,7 @@ namespace DungeonMaster.Character.Enemy
         // 풀 출신이면 반납, 아니면 파괴.
         // 씬에 직접 배치된 적을 Release 하면 풀이 모르는 오브젝트라 경고만 내고 무시해서
         // 죽었는데 화면에 그대로 남는다
+        // 치우기 전에 크기, 색, 체력바를 원래대로 돌린다. 창고에 들어간 모습 그대로 다음에 다시 나오기 때문이다
         private void Remove()
         {
             transform.localScale = _baseScale;
@@ -644,6 +718,8 @@ namespace DungeonMaster.Character.Enemy
         // Awake/Start 는 최초 1회뿐이므로 재사용 시 초기화는 전부 여기서 한다.
         // 하나라도 빠뜨리면 "죽은 채로 스폰되는 적", "체력이 깎인 채 나오는 적",
         // "스폰하자마자 피격 애니메이션을 재생하는 적" 같은 버그가 된다.
+        // ObjectPool.Spawn 이 오브젝트를 켠(SetActive(true)) 직후에 부른다. 처음 만들어진 개체도 똑같이 불린다.
+        // 난이도 배율(_hpScale, _damageScale)은 여기서 되돌리지 않는다. 바로 뒤에 스포너가 ApplyDifficultyScale 로 새로 넣는다
         public void OnSpawnFromPool()
         {
             _fromPool = true;
@@ -689,6 +765,8 @@ namespace DungeonMaster.Character.Enemy
             AcquireTarget();
         }
 
+        // ObjectPool.Release 가 오브젝트를 끄기 직전에 부른다.
+        // 꺼지면 코루틴은 저절로 멈추지만 색은 붉은 채로 남으므로, 여기서 멈추고 모습을 돌려 둔다
         public void OnReturnToPool()
         {
             if (_flashRoutine != null)
@@ -705,6 +783,7 @@ namespace DungeonMaster.Character.Enemy
 
         // 가끔만 나온다. 항상 나오면 체력이 자원이 아니게 되고,
         // 아예 안 나오면 한 번 깎인 체력을 되돌릴 방법이 사실상 없다
+        // Die 에서 부른다. Random.value 는 0~1 사이 무작위 수라서, 확률이 0.1 이면 열 번에 한 번꼴로 떨군다
         private void DropHealth()
         {
             if (_dropHealth == null) return;
