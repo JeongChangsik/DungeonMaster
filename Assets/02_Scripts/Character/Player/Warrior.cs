@@ -26,6 +26,9 @@ namespace DungeonMaster.Character.Player
         [SerializeField] private WarriorSO _warriorSO;
         private float _defense;
 
+        // Warrior 전용 공격 애니메이터(Pivot's Animator)
+        [SerializeField] private Animator _warriorAnimator;
+
         #region 유니티 생명주기
         protected override void Awake()
         {
@@ -48,6 +51,7 @@ namespace DungeonMaster.Character.Player
         {
             Debug.Log("공격 실행");
             // _audioSource.PlayOneShot(_attackSFX, 0.8f);
+            _warriorAnimator.SetTrigger(hashAttack);
             AudioManager.Instance.PlayerSFX(AudioManager.Instance.AudioDataSO.playerAttackSFX);
         }
 

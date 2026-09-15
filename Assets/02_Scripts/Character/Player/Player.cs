@@ -116,7 +116,7 @@ namespace DungeonMaster.Character.Player
                 └─ Head
             */
             // 하지만 여기서는 GameObject.Find로 "Canvas" 오브젝트를 찾았으니 "Canvas" 오브젝트부터 하위로 Image 컴포넌트 탐색함
-            _hpBar2 = GameObject.Find("Canvas").GetComponentsInChildren<Image>()[2];
+            // _hpBar2 = GameObject.Find("Canvas").GetComponentsInChildren<Image>()[2];
 
             // Weapon Arm 설정
             _weaponArm = transform.Find("Arm");
@@ -217,7 +217,7 @@ namespace DungeonMaster.Character.Player
             if(Time.time >= lastAttackTime + AttackCooldown)
             {
                 lastAttackTime = Time.time;
-                _animator.SetTrigger(hashAttack);
+                // _animator.SetTrigger(hashAttack);
                 Attack();
             }
         }
